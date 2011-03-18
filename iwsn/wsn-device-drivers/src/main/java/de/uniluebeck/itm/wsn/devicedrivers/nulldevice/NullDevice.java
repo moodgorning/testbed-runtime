@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author dp
  */
-public class NullDevice extends iSenseDeviceImpl {
+public class NullDevice extends GenericDevice {
 
 	/**
 	 *

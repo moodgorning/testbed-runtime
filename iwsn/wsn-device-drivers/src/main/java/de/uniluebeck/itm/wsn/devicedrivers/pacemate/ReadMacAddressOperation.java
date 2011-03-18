@@ -27,7 +27,7 @@ import de.uniluebeck.itm.tr.util.StringUtils;
 import de.uniluebeck.itm.wsn.devicedrivers.generic.ChipType;
 import de.uniluebeck.itm.wsn.devicedrivers.generic.MacAddress;
 import de.uniluebeck.itm.wsn.devicedrivers.generic.Operation;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDeviceOperation;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.GenericDeviceOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Maick Danckwardt
  */
-public class ReadMacAddressOperation extends iSenseDeviceOperation {
+public class ReadMacAddressOperation extends GenericDeviceOperation {
 
 	private PacemateDevice device;
 

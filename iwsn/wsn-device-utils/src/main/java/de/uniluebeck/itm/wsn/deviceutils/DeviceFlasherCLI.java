@@ -5,8 +5,8 @@ import de.uniluebeck.itm.tr.util.Logging;
 import de.uniluebeck.itm.wsn.devicedrivers.DeviceFactory;
 import de.uniluebeck.itm.wsn.devicedrivers.generic.IDeviceBinFile;
 import de.uniluebeck.itm.wsn.devicedrivers.generic.Operation;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDevice;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDeviceListenerAdapter;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.AbstractGenericDevice;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.AbstractGenericDeviceListener;
 import de.uniluebeck.itm.wsn.devicedrivers.jennic.JennicBinFile;
 import de.uniluebeck.itm.wsn.devicedrivers.jennic.JennicDevice;
 import de.uniluebeck.itm.wsn.devicedrivers.pacemate.PacemateBinFile;
@@ -43,7 +43,7 @@ public class DeviceFlasherCLI {
 			System.exit(1);
 		}
 
-		final iSenseDevice device = DeviceFactory.create(args[0], args[1]);
+		final AbstractGenericDevice device = DeviceFactory.create(args[0], args[1]);
 
 		IDeviceBinFile iSenseBinFile = null;
 
@@ -70,7 +70,7 @@ public class DeviceFlasherCLI {
 		}
 		);
 
-		device.registerListener(new iSenseDeviceListenerAdapter() {
+		device.registerListener(new AbstractGenericDeviceListener() {
 
 			private int lastProgress = -1;
 

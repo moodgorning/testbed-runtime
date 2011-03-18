@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.Enumeration;
 
-public class PacemateDevice extends iSenseDeviceImpl implements SerialPortEventListener {
+public class PacemateDevice extends GenericDevice implements SerialPortEventListener {
 
 	private InputStream inStream = null;
 

@@ -35,7 +35,7 @@ public class DeviceReadMacCLI {
 			System.exit(1);
 		}
 
-		final iSenseDevice device = DeviceFactory.create(args[0], args[1]);
+		final AbstractGenericDevice device = DeviceFactory.create(args[0], args[1]);
 
 		final Thread cancellationHook = new Thread(new Runnable() {
 			@Override
@@ -45,7 +45,7 @@ public class DeviceReadMacCLI {
 		}
 		);
 
-		device.registerListener(new iSenseDeviceListenerAdapter() {
+		device.registerListener(new AbstractGenericDeviceListener() {
 
 			private int lastProgress = -1;
 

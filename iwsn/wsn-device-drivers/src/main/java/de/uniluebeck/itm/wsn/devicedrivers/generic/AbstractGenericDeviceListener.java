@@ -26,7 +26,7 @@ package de.uniluebeck.itm.wsn.devicedrivers.generic;
 /**
  * @author dp
  */
-public abstract class iSenseDeviceListenerAdapter implements iSenseDeviceListener {
+public abstract class AbstractGenericDeviceListener implements GenericDeviceListener {
 
 	@Override
 	public void receivePacket(MessagePacket p) {

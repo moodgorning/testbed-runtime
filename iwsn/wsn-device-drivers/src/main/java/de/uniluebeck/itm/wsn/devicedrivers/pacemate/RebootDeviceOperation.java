@@ -24,11 +24,11 @@
 package de.uniluebeck.itm.wsn.devicedrivers.pacemate;
 
 import de.uniluebeck.itm.wsn.devicedrivers.generic.Operation;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDeviceOperation;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.GenericDeviceOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RebootDeviceOperation extends iSenseDeviceOperation {
+public class RebootDeviceOperation extends GenericDeviceOperation {
 
 	public RebootDeviceOperation(PacemateDevice device) {
 		super(device);

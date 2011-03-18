@@ -34,7 +34,7 @@ import java.io.IOException;
 /**
  * @author Friedemann Wesner
  */
-public class TelosbFlashProgramOperation extends iSenseDeviceOperation {
+public class TelosbFlashProgramOperation extends GenericDeviceOperation {
 
 	private IDeviceBinFile binFile = null;
 
@@ -44,7 +44,7 @@ public class TelosbFlashProgramOperation extends iSenseDeviceOperation {
 	 * @param device
 	 * @param binFile
 	 */
-	public TelosbFlashProgramOperation(iSenseDeviceImpl device, IDeviceBinFile binFile) {
+	public TelosbFlashProgramOperation(GenericDevice device, IDeviceBinFile binFile) {
 		super(device);
 
 		if (device == null || binFile == null) {

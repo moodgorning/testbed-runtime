@@ -43,7 +43,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * @author dp
  */
-public abstract class iSenseDeviceImpl extends iSenseDevice {
+public abstract class GenericDevice extends AbstractGenericDevice {
 
 	/** */
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -62,7 +62,7 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 	 * The list is immutable so that listeners can de-register themselves while being called, thereby not producing
 	 * {@link ConcurrentModificationException}s.
 	 */
-	protected ImmutableList<iSenseDeviceListener> promiscuousListeners = ImmutableList.of();
+	protected ImmutableList<GenericDeviceListener> promiscuousListeners = ImmutableList.of();
 
 	/**
 	 * Lock that has to be acquired if the promiscuousListeners variable is to be changed
@@ -74,7 +74,7 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 	 * The packet type is the key of the map. The lists inside are immutable so that listeners can de-register
 	 * themselves while being called, thereby not producing {@link ConcurrentModificationException}s.
 	 */
-	protected ImmutableMap<Integer, ImmutableList<iSenseDeviceListener>> listeners = ImmutableMap.of();
+	protected ImmutableMap<Integer, ImmutableList<GenericDeviceListener>> listeners = ImmutableMap.of();
 
 	/**
 	 * Lock that has to be acquired if the listeners variable is to be changed
@@ -101,7 +101,7 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 	private boolean foundPacket = false;
 
 	/** */
-	protected iSenseDeviceOperation operation = null;
+	protected GenericDeviceOperation operation = null;
 
 	/**
 	 * Message mode
@@ -135,15 +135,15 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 	public abstract void leaveProgrammingMode() throws Exception;
 
 	@Override
-	public void registerListener(iSenseDeviceListener listener) {
+	public void registerListener(GenericDeviceListener listener) {
 
 		try {
 			// acquire lock first so that we don't get any lost updates
 			promiscuousListenersLock.lock();
 
 			// copy all current listeners to new immutable list
-			ImmutableList<iSenseDeviceListener> newPromiscuousListeners =
-					ImmutableList.<iSenseDeviceListener>builder().addAll(promiscuousListeners).add(listener).build();
+			ImmutableList<GenericDeviceListener> newPromiscuousListeners =
+					ImmutableList.<GenericDeviceListener>builder().addAll(promiscuousListeners).add(listener).build();
 
 			// exchange old and new list
 			promiscuousListeners = newPromiscuousListeners;
@@ -157,7 +157,7 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 	}
 
 	@Override
-	public void deregisterListener(iSenseDeviceListener listener) {
+	public void deregisterListener(GenericDeviceListener listener) {
 
 		try {
 
@@ -165,9 +165,9 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 			promiscuousListenersLock.lock();
 
 			// copy all current listeners except the one to remove to new immutable list
-			ImmutableList.Builder<iSenseDeviceListener> newPromiscuousListenersBuilder = ImmutableList.builder();
+			ImmutableList.Builder<GenericDeviceListener> newPromiscuousListenersBuilder = ImmutableList.builder();
 
-			for (iSenseDeviceListener promiscuousListener : promiscuousListeners) {
+			for (GenericDeviceListener promiscuousListener : promiscuousListeners) {
 				if (promiscuousListener != listener) {
 					newPromiscuousListenersBuilder.add(promiscuousListener);
 				}
@@ -191,26 +191,26 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 	}
 
 	@Override
-	public void registerListener(iSenseDeviceListener listener, int type) {
+	public void registerListener(GenericDeviceListener listener, int type) {
 
 		try {
 
 			// acquire lock first so that we don't get any lost updates
 			listenersLock.lock();
 
-			ImmutableMap.Builder<Integer, ImmutableList<iSenseDeviceListener>> newMap = ImmutableMap.builder();
+			ImmutableMap.Builder<Integer, ImmutableList<GenericDeviceListener>> newMap = ImmutableMap.builder();
 
 			// copy all references of lists contained in the map to the new map but construct new list with listener
 			// to add if it's the same type (map key)
-			for (Map.Entry<Integer, ImmutableList<iSenseDeviceListener>> entry : listeners.entrySet()) {
+			for (Map.Entry<Integer, ImmutableList<GenericDeviceListener>> entry : listeners.entrySet()) {
 
 				if (entry.getKey() == type) {
 
 					// copy all current listeners into a new immutable list and add new listener
-					ImmutableList.Builder<iSenseDeviceListener> newListeners =
-							ImmutableList.<iSenseDeviceListener>builder().add(listener);
+					ImmutableList.Builder<GenericDeviceListener> newListeners =
+							ImmutableList.<GenericDeviceListener>builder().add(listener);
 
-					ImmutableList<iSenseDeviceListener> currentListeners = listeners.get(type);
+					ImmutableList<GenericDeviceListener> currentListeners = listeners.get(type);
 					if (currentListeners != null) {
 						newListeners.addAll(currentListeners);
 					}
@@ -235,25 +235,25 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 		logDebug("Added listener {} for type {}, now got {} listeners", listener, type, this.listeners.get(type).size());
 	}
 
-	public void deregisterListener(iSenseDeviceListener listener, int type) {
+	public void deregisterListener(GenericDeviceListener listener, int type) {
 
 		try {
 
 			// acquire lock first so that we don't get any lost updates
 			listenersLock.lock();
 
-			ImmutableMap.Builder<Integer, ImmutableList<iSenseDeviceListener>> newMap = ImmutableMap.builder();
+			ImmutableMap.Builder<Integer, ImmutableList<GenericDeviceListener>> newMap = ImmutableMap.builder();
 
 			// copy all references of lists contained in the map to the new map but construct new list without
 			// listener to remove if it's the same type (map key)
-			for (Map.Entry<Integer, ImmutableList<iSenseDeviceListener>> entry : listeners.entrySet()) {
+			for (Map.Entry<Integer, ImmutableList<GenericDeviceListener>> entry : listeners.entrySet()) {
 
 				if (entry.getKey() == type) {
 
 					// copy all current listeners except the one to remove into a new immutable list
-					ImmutableList.Builder<iSenseDeviceListener> newListeners = ImmutableList.builder();
+					ImmutableList.Builder<GenericDeviceListener> newListeners = ImmutableList.builder();
 
-					for (iSenseDeviceListener currentListener : entry.getValue()) {
+					for (GenericDeviceListener currentListener : entry.getValue()) {
 						if (currentListener != listener) {
 							newListeners.add(currentListener);
 						}
@@ -401,7 +401,7 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 	/**
 	 *
 	 */
-	public iSenseDeviceImpl() {
+	public GenericDevice() {
 	}
 
 	// -------------------------------------------------------------------------
@@ -417,12 +417,12 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 			logDebug("Operation {} done.", op);
 		}
 
-		for (final iSenseDeviceListener l : promiscuousListeners) {
+		for (final GenericDeviceListener l : promiscuousListeners) {
 			l.operationDone(op, result);
 		}
 
-		for (List<iSenseDeviceListener> ls : listeners.values()) {
-			for (final iSenseDeviceListener l : ls) {
+		for (List<GenericDeviceListener> ls : listeners.values()) {
+			for (final GenericDeviceListener l : ls) {
 				l.operationDone(op, result);
 			}
 		}
@@ -437,16 +437,16 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 	/**
 	 *
 	 */
-	public void operationCancelled(final iSenseDeviceOperation op) {
+	public void operationCancelled(final GenericDeviceOperation op) {
 
 		logDebug("Operation {} cancelled", op);
 
-		for (final iSenseDeviceListener l : promiscuousListeners) {
+		for (final GenericDeviceListener l : promiscuousListeners) {
 			l.operationCanceled(op.getOperation());
 		}
 
-		for (List<iSenseDeviceListener> ls : listeners.values()) {
-			for (final iSenseDeviceListener l : ls) {
+		for (List<GenericDeviceListener> ls : listeners.values()) {
+			for (final GenericDeviceListener l : ls) {
 				l.operationCanceled(op.getOperation());
 			}
 		}
@@ -467,12 +467,12 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 			logDebug("Operation {} progress: {}", op, fraction);
 		}
 
-		for (final iSenseDeviceListener l : promiscuousListeners) {
+		for (final GenericDeviceListener l : promiscuousListeners) {
 			l.operationProgress(op, fraction);
 		}
 
-		for (List<iSenseDeviceListener> ls : listeners.values()) {
-			for (final iSenseDeviceListener l : ls) {
+		for (List<GenericDeviceListener> ls : listeners.values()) {
+			for (final GenericDeviceListener l : ls) {
 				l.operationProgress(op, fraction);
 			}
 		}
@@ -633,13 +633,13 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 	 */
 	public void notifyReceivePacket(final MessagePacket p) {
 
-		for (final iSenseDeviceListener l : promiscuousListeners) {
+		for (final GenericDeviceListener l : promiscuousListeners) {
 			l.receivePacket(p);
 		}
 
-		List<iSenseDeviceListener> ls = this.listeners.get(p.getType());
+		List<GenericDeviceListener> ls = this.listeners.get(p.getType());
 		if (ls != null) {
-			for (final iSenseDeviceListener l : ls) {
+			for (final GenericDeviceListener l : ls) {
 				l.receivePacket(p);
 			}
 		}
@@ -654,7 +654,7 @@ public abstract class iSenseDeviceImpl extends iSenseDevice {
 
 		logDebug("New plain text packet received: {}", p);
 
-		for (final iSenseDeviceListener l : promiscuousListeners) {
+		for (final GenericDeviceListener l : promiscuousListeners) {
 			l.receivePlainText(p);
 		}
 

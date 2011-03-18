@@ -24,22 +24,22 @@
 package de.uniluebeck.itm.wsn.devicedrivers.telosb;
 
 import de.uniluebeck.itm.wsn.devicedrivers.generic.Operation;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDeviceImpl;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDeviceOperation;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.GenericDevice;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.GenericDeviceOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author Friedemann Wesner
  */
-public class TelosbRebootDeviceOperation extends iSenseDeviceOperation {
+public class TelosbRebootDeviceOperation extends GenericDeviceOperation {
 
 	/**
 	 * Constructor
 	 *
 	 * @param device
 	 */
-	public TelosbRebootDeviceOperation(iSenseDeviceImpl device) {
+	public TelosbRebootDeviceOperation(GenericDevice device) {
 		super(device);
 	}
 

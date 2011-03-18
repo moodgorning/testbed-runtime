@@ -39,7 +39,7 @@ public class DeviceFactory {
 
 	private static final Logger log = LoggerFactory.getLogger(DeviceFactory.class);
 
-	public static iSenseDevice create(String type, String port) throws Exception {
+	public static AbstractGenericDevice create(String type, String port) throws Exception {
 
 		log.debug("Using java.library.path={}", System.getProperty("java.library.path"));
 

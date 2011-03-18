@@ -25,11 +25,11 @@ package de.uniluebeck.itm.wsn.devicedrivers.pacemate;
 
 import de.uniluebeck.itm.wsn.devicedrivers.generic.MacAddress;
 import de.uniluebeck.itm.wsn.devicedrivers.generic.Operation;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDeviceOperation;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.GenericDeviceOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class WriteMacAddressOperation extends iSenseDeviceOperation {
+public class WriteMacAddressOperation extends GenericDeviceOperation {
 
 	/**
 	 *

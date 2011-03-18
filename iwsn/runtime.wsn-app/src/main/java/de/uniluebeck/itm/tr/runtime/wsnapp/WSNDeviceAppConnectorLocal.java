@@ -93,7 +93,7 @@ public class WSNDeviceAppConnectorLocal extends AbstractListenable<WSNDeviceAppC
 
 	}
 
-	private class FlashProgramListener implements iSenseDeviceListener, Comparable<iSenseDeviceListener> {
+	private class FlashProgramListener implements GenericDeviceListener, Comparable<GenericDeviceListener> {
 
 		private int flashCount;
 
@@ -204,7 +204,7 @@ public class WSNDeviceAppConnectorLocal extends AbstractListenable<WSNDeviceAppC
 		}
 
 		@Override
-		public int compareTo(final iSenseDeviceListener o) {
+		public int compareTo(final GenericDeviceListener o) {
 			return o == this ? 0 : -1;
 		}
 
@@ -216,7 +216,7 @@ public class WSNDeviceAppConnectorLocal extends AbstractListenable<WSNDeviceAppC
 		}
 	}
 
-	private class ResetListener implements iSenseDeviceListener, Comparable<iSenseDeviceListener> {
+	private class ResetListener implements GenericDeviceListener, Comparable<GenericDeviceListener> {
 
 		private int resetCount;
 
@@ -314,7 +314,7 @@ public class WSNDeviceAppConnectorLocal extends AbstractListenable<WSNDeviceAppC
 		}
 
 		@Override
-		public int compareTo(final iSenseDeviceListener o) {
+		public int compareTo(final GenericDeviceListener o) {
 			return o == this ? 0 : -1;
 		}
 
@@ -444,7 +444,7 @@ public class WSNDeviceAppConnectorLocal extends AbstractListenable<WSNDeviceAppC
 	 * flashing and resetting operations are registered as needed and immediately removed after completion of the
 	 * operation.
 	 */
-	private iSenseDeviceListener deviceOutputListener = new iSenseDeviceListenerAdapter() {
+	private GenericDeviceListener deviceOutputListener = new AbstractGenericDeviceListener() {
 
 		@Override
 		public void receivePacket(MessagePacket p) {
@@ -545,7 +545,7 @@ public class WSNDeviceAppConnectorLocal extends AbstractListenable<WSNDeviceAppC
 
 	private String nodeUrn;
 
-	private iSenseDevice device;
+	private AbstractGenericDevice device;
 
 	public WSNDeviceAppConnectorLocal(final String nodeUrn, final String nodeType, final String nodeUSBChipID,
 									  final String nodeSerialInterface, final Integer nodeAPITimeout,

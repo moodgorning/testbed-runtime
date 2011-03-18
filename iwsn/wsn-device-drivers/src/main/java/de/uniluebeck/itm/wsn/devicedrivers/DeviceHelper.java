@@ -32,9 +32,9 @@ import java.nio.ByteBuffer;
 
 public class DeviceHelper {
 
-	public static ListenableFuture<Long> getMacAddress(iSenseDevice device) {
+	public static ListenableFuture<Long> getMacAddress(AbstractGenericDevice device) {
 		final ValueFuture<Long> future = ValueFuture.create();
-		device.registerListener(new iSenseDeviceListener() {
+		device.registerListener(new GenericDeviceListener() {
 			@Override
 			public void receivePacket(final MessagePacket messagePacket) {
 				// ignore

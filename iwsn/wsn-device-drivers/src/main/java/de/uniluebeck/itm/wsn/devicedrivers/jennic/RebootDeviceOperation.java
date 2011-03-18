@@ -24,14 +24,14 @@
 package de.uniluebeck.itm.wsn.devicedrivers.jennic;
 
 import de.uniluebeck.itm.wsn.devicedrivers.generic.Operation;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDeviceOperation;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.GenericDeviceOperation;
 
 // -------------------------------------------------------------------------
 
 /**
  *
  */
-public class RebootDeviceOperation extends iSenseDeviceOperation {
+public class RebootDeviceOperation extends GenericDeviceOperation {
 
 	/**
 	 *

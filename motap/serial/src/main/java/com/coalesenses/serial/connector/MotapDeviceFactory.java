@@ -27,7 +27,7 @@ import de.uniluebeck.itm.motelist.MoteList;
 import de.uniluebeck.itm.motelist.MoteListFactory;
 import de.uniluebeck.itm.motelist.MoteType;
 import de.uniluebeck.itm.wsn.devicedrivers.DeviceFactory;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDevice;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.AbstractGenericDevice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +70,7 @@ public class MotapDeviceFactory {
 	 */
 	public static SerialConnector create(String type, String port) {
 		try {
-			iSenseDevice device = DeviceFactory.create(type, port);
+			AbstractGenericDevice device = DeviceFactory.create(type, port);
 			return create(device);
 		} catch (Exception e) {
 			log.error("Device of type {} on port {} could not be instantiated. Reason: {}", new Object[]{type, port, e}
@@ -79,7 +79,7 @@ public class MotapDeviceFactory {
 		}
 	}
 
-	public static SerialConnector create(iSenseDevice device) {
+	public static SerialConnector create(AbstractGenericDevice device) {
 		return new SerialConnector(device);
 	}
 }

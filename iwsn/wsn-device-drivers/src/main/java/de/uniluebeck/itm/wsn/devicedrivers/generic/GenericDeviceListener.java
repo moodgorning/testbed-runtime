@@ -27,7 +27,7 @@ package de.uniluebeck.itm.wsn.devicedrivers.generic;
 /**
  * @author dp
  */
-public interface iSenseDeviceListener {
+public interface GenericDeviceListener {
 
 	public void receivePacket(MessagePacket p);
 

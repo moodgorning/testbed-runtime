@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 /**
  *
  */
-public class FlashProgramOperation extends iSenseDeviceOperation {
+public class FlashProgramOperation extends GenericDeviceOperation {
 
 	// /
 	private JennicDevice device;

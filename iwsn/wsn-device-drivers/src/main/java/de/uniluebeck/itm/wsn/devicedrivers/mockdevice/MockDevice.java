@@ -48,7 +48,7 @@ import static java.lang.Thread.sleep;
  *
  * @author Daniel Bimschas
  */
-public class MockDevice extends iSenseDeviceImpl {
+public class MockDevice extends GenericDevice {
 
 	public static final int MESSAGE_TYPE_WISELIB_DOWNSTREAM = 10;
 

@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author dp
  */
-public abstract class iSenseDeviceOperation extends Thread {
+public abstract class GenericDeviceOperation extends Thread {
 	/**
 	 * Logging
 	 */
@@ -43,7 +43,7 @@ public abstract class iSenseDeviceOperation extends Thread {
 	private boolean done = false;
 
 	/** */
-	private iSenseDeviceImpl device;
+	private GenericDevice device;
 
 	/** */
 	protected String logIdentifier;
@@ -67,7 +67,7 @@ public abstract class iSenseDeviceOperation extends Thread {
 	/**
 	 *
 	 */
-	public iSenseDeviceOperation(iSenseDeviceImpl device) {
+	public GenericDeviceOperation(GenericDevice device) {
 		this.device = device;
 	}
 
@@ -114,7 +114,7 @@ public abstract class iSenseDeviceOperation extends Thread {
 	/**
 	 *
 	 */
-	protected iSenseDeviceImpl getDevice() {
+	protected GenericDevice getDevice() {
 		return device;
 	}
 

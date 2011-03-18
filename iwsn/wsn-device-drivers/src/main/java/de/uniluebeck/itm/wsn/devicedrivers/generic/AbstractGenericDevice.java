@@ -32,10 +32,10 @@ import org.slf4j.LoggerFactory;
 /**
  * @author dp
  */
-public abstract class iSenseDevice {
+public abstract class AbstractGenericDevice {
 	
 	/** */
-	private static final Logger log = LoggerFactory.getLogger(iSenseDevice.class);
+	private static final Logger log = LoggerFactory.getLogger(AbstractGenericDevice.class);
 
 	// -------------------------------------------------------------------------
 
@@ -90,27 +90,27 @@ public abstract class iSenseDevice {
 	/**
 	 * @param listener
 	 */
-	public abstract void registerListener(iSenseDeviceListener listener);
+	public abstract void registerListener(GenericDeviceListener listener);
 
 	// -------------------------------------------------------------------------
 
 	/**
 	 * @param listener
 	 */
-	public abstract void deregisterListener(iSenseDeviceListener listener);
+	public abstract void deregisterListener(GenericDeviceListener listener);
 
 	// -------------------------------------------------------------------------
 
 	/**
 	 *
 	 */
-	public abstract void registerListener(iSenseDeviceListener listener, int type);
+	public abstract void registerListener(GenericDeviceListener listener, int type);
 
 	// -------------------------------------------------------------------------
 
 	/**
 	 */
-	public abstract void deregisterListener(iSenseDeviceListener listener, int type);
+	public abstract void deregisterListener(GenericDeviceListener listener, int type);
 
 	// ------------------------------------------------------------------------
 	// --

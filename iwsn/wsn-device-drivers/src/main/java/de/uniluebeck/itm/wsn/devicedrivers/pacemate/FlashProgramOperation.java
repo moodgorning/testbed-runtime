@@ -31,7 +31,7 @@ import de.uniluebeck.itm.wsn.devicedrivers.generic.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FlashProgramOperation extends iSenseDeviceOperation {
+public class FlashProgramOperation extends GenericDeviceOperation {
 
 	private PacemateDevice device;
 

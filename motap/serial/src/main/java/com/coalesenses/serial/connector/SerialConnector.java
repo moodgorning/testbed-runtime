@@ -50,9 +50,9 @@ public class SerialConnector extends DeviceConnector {
 
     private static Logger log = LoggerFactory.getLogger(SerialConnector.class);
 
-    protected iSenseDevice USBDevice;
+    protected AbstractGenericDevice USBDevice;
 
-    private iSenseDeviceListener deviceListener = new iSenseDeviceListenerAdapter() {
+    private GenericDeviceListener deviceListener = new AbstractGenericDeviceListener() {
 
         @Override
         public void receivePacket(final MessagePacket p) {
@@ -63,7 +63,7 @@ public class SerialConnector extends DeviceConnector {
         }
     };
 
-    public SerialConnector(iSenseDevice USBDevice) {
+    public SerialConnector(AbstractGenericDevice USBDevice) {
         this.USBDevice = USBDevice;
         this.USBDevice.registerListener(deviceListener);
     }
@@ -108,7 +108,7 @@ public class SerialConnector extends DeviceConnector {
     }
 
 
-    public void setUSBDevice(iSenseDevice USBDevice) {
+    public void setUSBDevice(AbstractGenericDevice USBDevice) {
         this.USBDevice = USBDevice;
     }
 }

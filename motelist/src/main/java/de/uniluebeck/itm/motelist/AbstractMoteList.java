@@ -31,7 +31,7 @@ import de.uniluebeck.itm.tr.util.TimeDiff;
 import de.uniluebeck.itm.wsn.devicedrivers.generic.MacAddress;
 import de.uniluebeck.itm.wsn.devicedrivers.generic.MessagePacket;
 import de.uniluebeck.itm.wsn.devicedrivers.generic.Operation;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDeviceListenerAdapter;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.AbstractGenericDeviceListener;
 import de.uniluebeck.itm.wsn.devicedrivers.jennic.JennicDevice;
 import de.uniluebeck.itm.wsn.devicedrivers.pacemate.PacemateDevice;
 import org.slf4j.Logger;
@@ -199,7 +199,7 @@ abstract class AbstractMoteList implements MoteList {
 
             if (device.isConnected()) {
                 log.info("Connected to device at {}", data.port);
-                device.registerListener(new iSenseDeviceListenerAdapter() {
+                device.registerListener(new AbstractGenericDeviceListener() {
 
                     @Override
                     public void receivePacket(final MessagePacket p) {/* nothing to do */}
@@ -255,7 +255,7 @@ abstract class AbstractMoteList implements MoteList {
 
             if (device.isConnected()) {
                 log.info("Connected to device at {}", data.port);
-                device.registerListener(new iSenseDeviceListenerAdapter() {
+                device.registerListener(new AbstractGenericDeviceListener() {
 
                     @Override
                     public void receivePacket(final MessagePacket p) {/* nothing to do */}

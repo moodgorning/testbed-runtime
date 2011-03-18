@@ -40,7 +40,7 @@ import java.util.TooManyListenersException;
 /**
  * @author Friedemann Wesner A device class representing a TelosB device.
  */
-public class TelosbDevice extends iSenseDeviceImpl implements
+public class TelosbDevice extends GenericDevice implements
 		SerialPortEventListener {
 
 	private static final Logger log = LoggerFactory

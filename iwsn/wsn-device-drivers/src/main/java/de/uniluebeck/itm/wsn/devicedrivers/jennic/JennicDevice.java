@@ -36,7 +36,7 @@ import java.io.*;
 /**
  * @author Markus
  */
-public class JennicDevice extends iSenseDeviceImpl implements SerialPortEventListener {
+public class JennicDevice extends GenericDevice implements SerialPortEventListener {
 
 	private static final int MAX_RETRIES = 5;
 

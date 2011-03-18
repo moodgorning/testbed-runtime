@@ -15,10 +15,13 @@ import org.slf4j.LoggerFactory;
 
 import de.uniluebeck.itm.tr.util.Logging;
 import de.uniluebeck.itm.wsn.devicedrivers.DeviceFactory;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.AbstractGenericDevice;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.AbstractGenericDeviceListener;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.GenericDeviceListener;
 import de.uniluebeck.itm.wsn.devicedrivers.generic.MessagePacket;
 import de.uniluebeck.itm.wsn.devicedrivers.generic.MessagePlainText;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDevice;
-import de.uniluebeck.itm.wsn.devicedrivers.generic.iSenseDeviceListenerAdapter;
+import de.uniluebeck.itm.wsn.devicedrivers.generic.Operation;
+
 import de.uniluebeck.itm.wsn.deviceutils.writers.CsvWriter;
 import de.uniluebeck.itm.wsn.deviceutils.writers.HumanReadableWriter;
 import de.uniluebeck.itm.wsn.deviceutils.writers.WiseMLWriter;
@@ -27,7 +30,7 @@ import de.uniluebeck.itm.wsn.deviceutils.writers.Writer;
 public class DeviceListenerCLI {
 	private final static org.slf4j.Logger log = LoggerFactory.getLogger(DeviceListenerCLI.class);
 
-	private static class MessageReceiver extends iSenseDeviceListenerAdapter {
+	private static class MessageReceiver extends AbstractGenericDeviceListener {
 		private Writer outWriter;
 
 		public MessageReceiver(Writer outWriter) {
@@ -42,6 +45,24 @@ public class DeviceListenerCLI {
 		@Override
 		public void receivePacket(MessagePacket p) {
 			outWriter.write(p);
+		}
+
+		@Override
+		public void operationCanceled(Operation op) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void operationDone(Operation op, Object result) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void operationProgress(Operation op, float fraction) {
+			// TODO Auto-generated method stub
+			
 		}
 
 	}
@@ -66,7 +87,7 @@ public class DeviceListenerCLI {
 
 		Logging.setLoggingDefaults();
 
-		iSenseDevice device = null;
+		AbstractGenericDevice device = null;
 		OutputStream outStream = System.out;
 		Writer outWriter;
 
