@@ -8,3 +8,6 @@ target/
 **/**/target/
 rs/rs-persistence-jpa/derby.log
 scripts/logs/
+.classpath
+.project
+.settings/
