@@ -63,14 +63,11 @@
 			<groupId>de.uniluebeck.itm</groupId>
 			<artifactId>tr.runtime.stats</artifactId>
 		</dependency>
-
-		<!--
-		<dependency>
-			<groupId>de.tubs.cs.ibr</groupId>
-			<artifactId>CoCoSBackend</artifactId>
-			<version>1.4.1</version>
-		</dependency>
-		-->
+        <dependency>
+            <groupId>de.tubs.cs.ibr</groupId>
+            <artifactId>CoCoSBackend</artifactId>
+            <version>[1.0,)</version>
+        </dependency>
 
 
 		<dependency>
