@@ -25,11 +25,11 @@ package de.uniluebeck.itm.tr.wsn.federator;
 
 import de.uniluebeck.itm.tr.util.TimedCache;
 import de.uniluebeck.itm.tr.util.UrlUtils;
+import eu.wisebed.api.common.Message;
+import eu.wisebed.api.controller.Controller;
+import eu.wisebed.api.controller.RequestStatus;
 import eu.wisebed.testbed.api.wsn.Constants;
-import eu.wisebed.testbed.api.wsn.ControllerHelper;
-import eu.wisebed.testbed.api.wsn.v22.Controller;
-import eu.wisebed.testbed.api.wsn.v22.Message;
-import eu.wisebed.testbed.api.wsn.v22.RequestStatus;
+import eu.wisebed.testbed.api.wsn.deliverymanager.DeliveryManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,32 +55,31 @@ public class FederatorController implements Controller {
 	private static final TimeUnit CACHE_TIMEOUT_UNIT = TimeUnit.MINUTES;
 
 	/**
-	 * Maps the federatedRequestId to the federatorRequestId (i.e. remote to
-	 * local)
+	 * Maps the federatedRequestId to the federatorRequestId (i.e. remote to local)
 	 */
-	private TimedCache<String, String> requestIdMappingCache = new TimedCache<String, String>(CACHE_TIMEOUT,
-			CACHE_TIMEOUT_UNIT);
+	private TimedCache<String, String> requestIdMappingCache = new TimedCache<String, String>(
+			CACHE_TIMEOUT,
+			CACHE_TIMEOUT_UNIT
+	);
 
 	/**
-	 * Maps federatedRequestID to a list of received RequestStatus instances
-	 * (multiple updates for one id possible). This map caches received
-	 * RequestStatus instances until the final mapping of federatedRequestID to
-	 * federatorRequestId is known. This should normally never happen, but in
-	 * very fast networks, it may happen that an asynchronous status update is
-	 * received before the mapping is set using addRequestIdMapping.
+	 * Maps federatedRequestID to a list of received RequestStatus instances (multiple updates for one id possible). This
+	 * map caches received RequestStatus instances until the final mapping of federatedRequestID to federatorRequestId is
+	 * known. This should normally never happen, but in very fast networks, it may happen that an asynchronous status
+	 * update is received before the mapping is set using addRequestIdMapping.
 	 */
-	private TimedCache<String, LinkedList<RequestStatus>> pendingRequestStatus = new TimedCache<String, LinkedList<RequestStatus>>(
-			CACHE_TIMEOUT, CACHE_TIMEOUT_UNIT);
+	private TimedCache<String, LinkedList<RequestStatus>> pendingRequestStatus =
+			new TimedCache<String, LinkedList<RequestStatus>>(CACHE_TIMEOUT, CACHE_TIMEOUT_UNIT);
 
 	private String controllerEndpointUrl;
 
 	private Endpoint controllerEndpoint;
 
-	private ControllerHelper controllerHelper;
+	private DeliveryManager deliveryManager;
 
 	public FederatorController(String controllerEndpointUrl) {
 		this.controllerEndpointUrl = controllerEndpointUrl;
-		this.controllerHelper = new ControllerHelper();
+		this.deliveryManager = new DeliveryManager();
 	}
 
 	public void addRequestIdMapping(String federatedRequestId, String federatorRequestId) {
@@ -94,7 +93,8 @@ public class FederatorController implements Controller {
 
 		if (requestStatusList != null) {
 			log.debug("Already got {} status updates for federatedRequestId {} ", requestStatusList.size(),
-					federatedRequestId);
+					federatedRequestId
+			);
 
 			// Dispatch all status updates and remove them from the list
 			synchronized (requestStatusList) {
@@ -114,13 +114,14 @@ public class FederatorController implements Controller {
 	public void start() throws Exception {
 		String bindAllInterfacesUrl = UrlUtils.convertHostToZeros(controllerEndpointUrl);
 
-		log.debug("Starting WSN federator controller...");
+		log.debug("Starting federator controller...");
 		log.debug("Endpoint URL: {}", controllerEndpointUrl);
 		log.debug("Binding  URL: {}", bindAllInterfacesUrl);
 
 		controllerEndpoint = Endpoint.publish(bindAllInterfacesUrl, this);
+		deliveryManager.start();
 
-		log.debug("Successfully started WSN federator controller on {}!", bindAllInterfacesUrl);
+		log.debug("Successfully started federator controller on {}!", bindAllInterfacesUrl);
 	}
 
 	/**
@@ -130,33 +131,36 @@ public class FederatorController implements Controller {
 	 */
 	public void stop() throws Exception {
 
+		deliveryManager.experimentEnded();
+		deliveryManager.stop();
+
 		if (controllerEndpoint != null) {
 			controllerEndpoint.stop();
-			log.info("Stopped WSN federator controller at {}", controllerEndpointUrl);
+			log.info("Stopped federator controller at {}", controllerEndpointUrl);
 		}
 
-		log.info("Stopped WSN federator controller at {}!", controllerEndpointUrl);
+		log.info("Stopped federator controller at {}!", controllerEndpointUrl);
 	}
 
 	public void addController(String controllerEndpointUrl) {
-		controllerHelper.addController(controllerEndpointUrl);
+		deliveryManager.addController(controllerEndpointUrl);
 	}
 
 	public void removeController(String controllerEndpointUrl) {
-		controllerHelper.removeController(controllerEndpointUrl);
+		deliveryManager.removeController(controllerEndpointUrl);
 	}
 
 	private void receive(@WebParam(name = "msg", targetNamespace = "") Message msg) {
-		controllerHelper.receive(msg);
+		deliveryManager.receive(msg);
 	}
 
 	/**
-	 * Maps federatedRequestID to a list of received RequestStatus instances
-	 * (multiple updates for one id possible). This map caches received
-	 * RequestStatus instances until the final mapping of federatedRequestID to
-	 * federatorRequestId is known. This should normally never happen, but in
-	 * very fast networks, it may happen that an asynchronous status update is
-	 * received before the mapping is set using addRequestIdMapping.
+	 * Maps federatedRequestID to a list of received RequestStatus instances (multiple updates for one id possible). This
+	 * map caches received RequestStatus instances until the final mapping of federatedRequestID to federatorRequestId is
+	 * known. This should normally never happen, but in very fast networks, it may happen that an asynchronous status
+	 * update is received before the mapping is set using addRequestIdMapping.
+	 *
+	 * @param status
 	 */
 	private void cacheRequestStatus(RequestStatus status) {
 		synchronized (pendingRequestStatus) {
@@ -176,12 +180,14 @@ public class FederatorController implements Controller {
 	}
 
 	/**
-	 * Change the incoming request ID to the request ID that was issued by the
-	 * federator to its client
+	 * Change the incoming request ID to the request ID that was issued by the federator to its client.
+	 *
+	 * @param newRequestId
+	 * @param status
 	 */
 	private void changeIdAndDispatch(String newRequestId, RequestStatus status) {
 		status.setRequestId(newRequestId);
-		controllerHelper.receiveStatus(status);
+		deliveryManager.receiveStatus(status);
 	}
 
 	private void receiveStatus(@WebParam(name = "status", targetNamespace = "") RequestStatus status) {
@@ -196,7 +202,8 @@ public class FederatorController implements Controller {
 		} else {
 			log.warn("Unknown requestId {}. Caching the status update for " + CACHE_TIMEOUT + " " + CACHE_TIMEOUT_UNIT
 					+ " until the federatedRequestId <-> federatorRequestIdDropping mapping is known", status
-					.getRequestId());
+					.getRequestId()
+			);
 			cacheRequestStatus(status);
 		}
 	}
@@ -209,7 +216,8 @@ public class FederatorController implements Controller {
 	}
 
 	@Override
-	public void receiveStatus(@WebParam(name = "status", targetNamespace = "") final List<RequestStatus> requestStatusList) {
+	public void receiveStatus(
+			@WebParam(name = "status", targetNamespace = "") final List<RequestStatus> requestStatusList) {
 		for (RequestStatus requestStatus : requestStatusList) {
 			receiveStatus(requestStatus);
 		}
@@ -217,11 +225,15 @@ public class FederatorController implements Controller {
 
 	@Override
 	public void receiveNotification(@WebParam(name = "msg", targetNamespace = "") final List<String> notificationList) {
-		controllerHelper.receiveNotification(notificationList);
+		deliveryManager.receiveNotification(notificationList);
 	}
 
 	@Override
 	public void experimentEnded() {
-		controllerHelper.experimentEnded();
+		deliveryManager.experimentEnded();
+	}
+
+	String getControllerEndpointUrl() {
+		return controllerEndpointUrl;
 	}
 }

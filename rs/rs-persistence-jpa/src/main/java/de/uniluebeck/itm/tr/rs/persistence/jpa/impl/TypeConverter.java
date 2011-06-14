@@ -27,9 +27,9 @@ import de.uniluebeck.itm.tr.rs.persistence.jpa.entity.ConfidentialReservationDat
 import de.uniluebeck.itm.tr.rs.persistence.jpa.entity.DataInternal;
 import de.uniluebeck.itm.tr.rs.persistence.jpa.entity.ReservationDataInternal;
 import de.uniluebeck.itm.tr.rs.persistence.jpa.entity.SecretReservationKeyInternal;
-import eu.wisebed.testbed.api.rs.v1.ConfidentialReservationData;
-import eu.wisebed.testbed.api.rs.v1.Data;
-import eu.wisebed.testbed.api.rs.v1.SecretReservationKey;
+import eu.wisebed.api.rs.ConfidentialReservationData;
+import eu.wisebed.api.rs.Data;
+import eu.wisebed.api.rs.SecretReservationKey;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -59,6 +59,10 @@ public class TypeConverter {
 		ConfidentialReservationDataInternal internal = new ConfidentialReservationDataInternal();
 
 		GregorianCalendar fromGregorianCalendar = external.getFrom().toGregorianCalendar();
+
+		// strange workaround to initialize object before setting timezone
+		fromGregorianCalendar.getTimeInMillis();
+
 		fromGregorianCalendar.setTimeZone(localTimeZone);
 		internal.setFromDate(fromGregorianCalendar.getTimeInMillis());
 
@@ -66,6 +70,10 @@ public class TypeConverter {
 		internal.setData(convertExternalToInternal(external.getData()));
 
 		GregorianCalendar toGregorianCalendar = external.getTo().toGregorianCalendar();
+
+		// strange workaround to initialize object before setting timezone
+		toGregorianCalendar.getTimeInMillis();
+
 		toGregorianCalendar.setTimeZone(localTimeZone);
 		internal.setToDate(toGregorianCalendar.getTimeInMillis());
 

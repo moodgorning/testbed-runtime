@@ -29,42 +29,21 @@
 	<groupId>de.uniluebeck.itm</groupId>
 	<artifactId>tr</artifactId>
 	<packaging>pom</packaging>
-	<version>0.6.2-SNAPSHOT</version>
+	<version>0.7.1-SNAPSHOT</version>
 	<name>TR</name>
 
 	<modules>
 
-		<module>rs/rs-api</module>
-		<module>rs/rs-cmdline</module>
-		<module>rs/rs-dummy</module>
-		<module>rs/rs-federator</module>
-		<module>rs/rs-singleurnprefix</module>
-		<module>rs/rs-persistence</module>
-		<module>rs/rs-persistence-gcal</module>
-		<module>rs/rs-persistence-inmemory</module>
-		<module>rs/rs-persistence-jpa</module>
-
+		<module>assemblies/</module>
+		<module>clients/</module>
+		<module>rs/</module>
 		<module>iwsn/</module>
-
-		<module>snaa/snaa-api</module>
-		<module>snaa/snaa-cmdline-client</module>
-		<module>snaa/snaa-cmdline-server</module>
-		<module>snaa/snaa-dummy</module>
-		<module>snaa/snaa-federator</module>
-		<module>snaa/snaa-shibboleth</module>
-		<module>snaa/snaa-jaaslogin</module>
-		<module>snaa/snaa-wisebed</module>
-
-		<module>assemblies/experimentation-scripts</module>
-		<module>assemblies/assembly</module>
-		<module>assemblies/assembly-federator</module>
+		<module>snaa/</module>
 
 		<module>shibboauth</module>
 		<module>util</module>
 		<module>motelist</module>
 		<module>node-api</module>
-		<module>protobuf-api</module>
-		<module>wisebed-cmdline-client</module>
 		<module>wiseml</module>
 		<module>wiseml-merger</module>
 		<module>motap</module>
@@ -74,16 +53,6 @@
 	<dependencyManagement>
 		<dependencies>
 
-			<dependency>
-				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.logcontroller</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.messagestore-api</artifactId>
-				<version>${project.version}</version>
-			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
 				<artifactId>tr.rs-persistence</artifactId>
@@ -103,11 +72,6 @@
 				<groupId>de.uniluebeck.itm</groupId>
 				<artifactId>tr.rs-cmdline</artifactId>
 				<classifier>onejar</classifier>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.runtime.xml-testbed-factory</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -147,33 +111,33 @@
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.runtime</artifactId>
+				<artifactId>tr.overlay</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.runtime.cmdline</artifactId>
+				<artifactId>tr.iwsn-cmdline</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.runtime.cmdline</artifactId>
+				<artifactId>tr.iwsn-cmdline</artifactId>
 				<classifier>onejar</classifier>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.runtime.portal</artifactId>
+				<artifactId>tr.iwsn-service</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.runtime.stats</artifactId>
+				<artifactId>tr.overlay-stats</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.runtime.wsn-app</artifactId>
+				<artifactId>tr.iwsn-deviceapp</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -224,7 +188,7 @@
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.wsn-api-client</artifactId>
+				<artifactId>tr.debugging-gui-client</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -259,7 +223,7 @@
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.runtime.socket-connector</artifactId>
+				<artifactId>tr.overlay-socketconnector</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -269,7 +233,7 @@
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.wisebed-cmdline-client</artifactId>
+				<artifactId>tr.scripting-client</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

@@ -23,14 +23,17 @@
 
 package eu.wisebed.testbed.api.wsn;
 
-import eu.wisebed.testbed.api.wsn.v22.SecretReservationKey;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import de.uniluebeck.itm.tr.util.NetworkUtils;
+import eu.wisebed.api.sm.SecretReservationKey;
+import eu.wisebed.testbed.api.wsn.deliverymanager.DeliveryManager;
 
 public class SessionManagementPreconditions {
 
@@ -38,6 +41,10 @@ public class SessionManagementPreconditions {
 
 	public SessionManagementPreconditions() {
 		this.commonPreconditions = new CommonPreconditions();
+	}
+
+	public void addKnownNodeUrns(final String... knownNodeUrns) {
+		commonPreconditions.addKnownNodeUrns(knownNodeUrns);
 	}
 
 	public void addServedUrnPrefixes(String... servedUrnPrefixes) {
@@ -48,7 +55,8 @@ public class SessionManagementPreconditions {
 		checkGetInstanceArguments(secretReservationKey, controller, false);
 	}
 
-	public void checkGetInstanceArguments(List<SecretReservationKey> secretReservationKey, String controller, boolean singleUrnImplementation) {
+	public void checkGetInstanceArguments(List<SecretReservationKey> secretReservationKey, String controller,
+										  boolean singleUrnImplementation) {
 
 		checkNotNull(secretReservationKey);
 		checkNotNull(controller);
@@ -65,8 +73,11 @@ public class SessionManagementPreconditions {
 	public void checkFreeArguments(List<SecretReservationKey> secretReservationKeyList) {
 
 		checkNotNull(secretReservationKeyList);
+	}
 
-
+	public void checkAreNodesAliveArguments(final Collection<String> nodes, final String controllerEndpointUrl) {
+		commonPreconditions.checkNodesKnown(nodes);
+		NetworkUtils.checkConnectivity(controllerEndpointUrl);
 	}
 
 	private void checkUrnPrefixesServed(List<SecretReservationKey> secretReservationKeys) {
@@ -81,8 +92,7 @@ public class SessionManagementPreconditions {
 			urnPrefixes.add(key.getUrnPrefix());
 
 		}
+
 		commonPreconditions.checkUrnPrefixesServed(urnPrefixes);
-
 	}
-
 }

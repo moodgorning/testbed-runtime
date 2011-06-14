@@ -5,16 +5,19 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import eu.wisebed.testbed.api.rs.RSServiceHelper;
-import eu.wisebed.testbed.api.rs.v1.PublicReservationData;
-import eu.wisebed.testbed.api.rs.v1.RS;
+import eu.wisebed.api.rs.PublicReservationData;
+import eu.wisebed.api.rs.RS;
 
-import eu.wisebed.testbed.api.snaa.v1.SNAA;
-import eu.wisebed.testbed.api.snaa.v1.AuthenticationTriple;
-import eu.wisebed.testbed.api.snaa.v1.SecretAuthenticationKey;
+import eu.wisebed.api.snaa.SNAA;
+import eu.wisebed.api.snaa.AuthenticationTriple;
+import eu.wisebed.api.snaa.SecretAuthenticationKey;
 import eu.wisebed.testbed.api.snaa.helpers.SNAAServiceHelper;
 
 import eu.wisebed.testbed.api.wsn.WSNServiceHelper;
-import eu.wisebed.testbed.api.wsn.v22.*;
+import eu.wisebed.api.controller.*;
+import eu.wisebed.api.common.*;
+import eu.wisebed.api.sm.*;
+import eu.wisebed.api.wsn.*;
 
 import de.uniluebeck.itm.tr.util.*;
 import de.itm.uniluebeck.tr.wiseml.WiseMLHelper;

@@ -29,7 +29,7 @@
 	<parent>
 		<groupId>de.uniluebeck.itm</groupId>
 		<artifactId>tr</artifactId>
-		<version>0.6.2-SNAPSHOT</version>
+		<version>0.7.1-SNAPSHOT</version>
 		<relativePath>../../</relativePath>
 	</parent>
 
@@ -91,28 +91,25 @@
 
 	<build>
 		<plugins>
-
-			<!--
-			Using self-patched version of onejar-maven-plugin to support
-			newer version of One-Jar that includes some bug fixes we need.
-			Can be removed later as soon as onejar-maven-plugin supports
-			the newer versions
-			-->
 			<plugin>
-				<groupId>org.dstovall</groupId>
-				<artifactId>onejar-maven-plugin-rc8fix</artifactId>
-				<version>1.4.5</version>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.2.1</version>
+				<configuration>
+					<descriptors>
+						<descriptor>assembly.xml</descriptor>
+					</descriptors>
+					<archive>
+						<manifest>
+							<mainClass>de.uniluebeck.itm.tr.rs.cmdline.RSServer</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
 				<executions>
 					<execution>
+						<id>make-assembly</id>
 						<phase>package</phase>
-						<configuration>
-							<mainClass>de.uniluebeck.itm.tr.rs.cmdline.RSServer</mainClass>
-							<onejarVersion>0.97-RC10</onejarVersion>
-							<attachToBuild>true</attachToBuild>
-                            <classifier>onejar</classifier>
-						</configuration>
 						<goals>
-							<goal>one-jar</goal>
+							<goal>single</goal>
 						</goals>
 					</execution>
 				</executions>
