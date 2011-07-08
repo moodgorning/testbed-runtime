@@ -36,6 +36,7 @@ public class Logging {
 		Logger itmLogger = Logger.getLogger("de.uniluebeck.itm");
 		Logger wisebedLogger = Logger.getLogger("eu.wisebed");
         Logger coaLogger = Logger.getLogger("com.coalesenses");
+        Logger tubsLogger = Logger.getLogger("de.tubs.cs.ibr");
 
 		if (!itmLogger.getAllAppenders().hasMoreElements()) {
 			itmLogger.addAppender(appender);
@@ -50,6 +51,10 @@ public class Logging {
         if (!coaLogger.getAllAppenders().hasMoreElements()) {
 			coaLogger.addAppender(appender);
 			coaLogger.setLevel(Level.INFO);
+		}
+        if (!tubsLogger.getAllAppenders().hasMoreElements()) {
+			tubsLogger.addAppender(appender);
+			tubsLogger.setLevel(Level.INFO);
 		}
 	}
 

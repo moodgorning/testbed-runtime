@@ -64,7 +64,7 @@
 		<dependency>
 			<groupId>de.tubs.cs.ibr</groupId>
 			<artifactId>CoCoSBackend</artifactId>
-			<version>1.7.5</version>
+			<version>[1.0,)</version>
 		</dependency>
 		
 
