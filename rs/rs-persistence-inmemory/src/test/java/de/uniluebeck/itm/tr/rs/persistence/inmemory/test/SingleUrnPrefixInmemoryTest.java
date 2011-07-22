@@ -23,34 +23,49 @@
 
 package de.uniluebeck.itm.tr.rs.persistence.inmemory.test;
 
+import com.google.inject.Binder;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
+import com.google.inject.name.Names;
+import com.google.inject.util.Providers;
 import de.uniluebeck.itm.tr.rs.persistence.RSPersistence;
 import de.uniluebeck.itm.tr.rs.persistence.inmemory.InMemoryRSPersistence;
 import de.uniluebeck.itm.tr.rs.singleurnprefix.SingleUrnPrefixRS;
-import de.uniluebeck.itm.tr.snaa.cmdline.server.SNAAServer;
-import de.uniluebeck.itm.tr.util.PropertiesUtils;
+import de.uniluebeck.itm.tr.util.Logging;
 import de.uniluebeck.itm.tr.util.SecureIdGenerator;
-import de.uniluebeck.itm.tr.util.UrlUtils;
 import eu.wisebed.api.rs.*;
+import eu.wisebed.api.sm.SessionManagement;
+import eu.wisebed.api.snaa.Action;
+import eu.wisebed.api.snaa.SNAA;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Matchers;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
-import java.net.BindException;
 import java.util.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SingleUrnPrefixInmemoryTest {
 
     private final SecureIdGenerator secureIdGenerator = new SecureIdGenerator();
 
-    private RSPersistence rsPersistence;
+	@Mock
+    private SNAA snaa;
 
-    private SingleUrnPrefixRS rs;
+	private RSPersistence rsPersistence;
+
+    private RS rs;
 
     private Map<Integer, ConfidentialReservationData> reservationDataMap =
             new HashMap<Integer, ConfidentialReservationData>();
@@ -73,7 +88,9 @@ public class SingleUrnPrefixInmemoryTest {
 
     private static final int RESERVATION_COUNT = 5;
 
-    private static class IntervalData {
+	private String[] servedNodeUrns;
+
+	private static class IntervalData {
 
         public DateTime from;
 
@@ -101,9 +118,9 @@ public class SingleUrnPrefixInmemoryTest {
 
     private static final DatatypeFactory datatypeFactory;
 
-    private static int snaaPort;
-
     static {
+
+		Logging.setLoggingDefaults();
 
         try {
             datatypeFactory = DatatypeFactory.newInstance();
@@ -164,82 +181,95 @@ public class SingleUrnPrefixInmemoryTest {
                 RESERVATION_COUNT, description
         )
         );
-
-        // start SNAA endpoint
-        snaaPort = UrlUtils.getRandomUnprivilegedPort();
-        final HashMap<String, String> snaaConfig = new HashMap<String, String>() {{
-
-            // choose an arbitrary port between 1024 and 65535
-            put("config.port", "" + snaaPort);
-            put("config.snaas", "dummy1");
-
-            put("dummy1.type", "dummy");
-            put("dummy1.urnprefix", TESTBED_PREFIX);
-            put("dummy1.path", "/snaa/dummy1");
-
-        }};
-        boolean started = false;
-
-        while (!started) {
-            try {
-                SNAAServer.startFromProperties(PropertiesUtils.copyToProperties(snaaConfig));
-            } catch (Exception e) {
-                if (e.getCause() instanceof BindException) {
-                    snaaPort = UrlUtils.getRandomUnprivilegedPort();
-                    snaaConfig.put("config.port", "" + snaaPort);
-                } else {
-                    throw new RuntimeException(e);
-                }
-            }
-            started = true;
-        }
         
     }
 
     @Before
     public void setUp() throws Exception {
 
-        rsPersistence = new InMemoryRSPersistence();
-        String snaaEndpointUrl = "http://localhost:" + snaaPort + "/snaa/dummy1";
-        rs = new SingleUrnPrefixRS(TESTBED_PREFIX, snaaEndpointUrl, null, rsPersistence);
+		when(snaa.isAuthorized(
+				Matchers.<List<eu.wisebed.api.snaa.SecretAuthenticationKey>>any(),
+				Matchers.<Action>any())
+		).thenReturn(true);
 
-        // create SecretAuthenticationKey for use with dummy SNAA (no pwd check)
-        secretAuthenticationKeyList = new LinkedList<SecretAuthenticationKey>();
-        SecretAuthenticationKey key = new SecretAuthenticationKey();
-        key.setUsername("username");
-        key.setSecretAuthenticationKey(secureIdGenerator.getNextId());
-        key.setUrnPrefix(TESTBED_PREFIX);
-        secretAuthenticationKeyList.add(key);
+		rsPersistence = new InMemoryRSPersistence();
 
-        // create 10 reservations of 10 different nodes (node 1 to 10)
-        for (int i = 0; i < RESERVATION_COUNT; i++) {
+		servedNodeUrns = new String[RESERVATION_COUNT];
+		for (int i = 0; i < servedNodeUrns.length; i++) {
+			servedNodeUrns[i] = TESTBED_PREFIX + (i + 1);
+		}
 
-            // create ConfidentialReservationData
-            ConfidentialReservationData confiData = new ConfidentialReservationData();
-            Data data = new Data();
-            data.setUrnPrefix(TESTBED_PREFIX);
-            data.setUsername("username");
-            confiData.getData().add(data);
+		final Injector injector = Guice.createInjector(new Module() {
+			@Override
+			public void configure(final Binder binder) {
 
-            confiData.setFrom(datatypeFactory.newXMLGregorianCalendar(
-                    reservationStartingTime.toGregorianCalendar()
-            )
-            );
-            confiData.setTo(datatypeFactory.newXMLGregorianCalendar(
-                    reservationEndingTime.toGregorianCalendar()
-            )
-            );
-            confiData.setUserData("username");
-            confiData.getNodeURNs().add(TESTBED_PREFIX + (i + 1));
 
-            // remember the node in a map that will be used when reserving nodes
-            reservationDataMap.put(i, confiData);
+				binder.bind(String.class)
+						.annotatedWith(Names.named("SingleUrnPrefixRS.urnPrefix"))
+						.toInstance(TESTBED_PREFIX);
 
-        }
+				binder.bind(SNAA.class)
+						.toInstance(snaa);
 
-    }
+				binder.bind(SessionManagement.class)
+						.toProvider(Providers.<SessionManagement>of(null));
 
-    @After
+				binder.bind(RSPersistence.class)
+						.toInstance(rsPersistence);
+
+				binder.bind(String[].class)
+						.annotatedWith(Names.named("SingleUrnPrefixRS.servedNodeUrns"))
+						.toInstance(servedNodeUrns);
+
+				binder.bind(RS.class).to(SingleUrnPrefixRS.class);
+			}
+		}
+		);
+
+		rs = injector.getInstance(RS.class);
+
+		// create SecretAuthenticationKey for use with dummy SNAA (no pwd check)
+		secretAuthenticationKeyList = buildSecretAuthenticationKeyList();
+
+		// create 10 reservations of 10 different nodes (node 1 to 10)
+		for (int i = 0; i < RESERVATION_COUNT; i++) {
+
+			// create ConfidentialReservationData
+			ConfidentialReservationData confiData = new ConfidentialReservationData();
+			Data data = new Data();
+			data.setUrnPrefix(TESTBED_PREFIX);
+			data.setUsername("username");
+			confiData.getData().add(data);
+
+			confiData.setFrom(datatypeFactory.newXMLGregorianCalendar(
+					reservationStartingTime.toGregorianCalendar()
+			)
+			);
+			confiData.setTo(datatypeFactory.newXMLGregorianCalendar(
+					reservationEndingTime.toGregorianCalendar()
+			)
+			);
+			confiData.setUserData("username");
+			confiData.getNodeURNs().add(TESTBED_PREFIX + (i + 1));
+
+			// remember the node in a map that will be used when reserving nodes
+			reservationDataMap.put(i, confiData);
+
+		}
+
+	}
+
+	private List<SecretAuthenticationKey> buildSecretAuthenticationKeyList() {
+		List<SecretAuthenticationKey> sakList = new LinkedList<SecretAuthenticationKey>();
+		SecretAuthenticationKey key = new SecretAuthenticationKey();
+		key.setUsername("username");
+		key.setSecretAuthenticationKey(secureIdGenerator.getNextId());
+		key.setUrnPrefix(TESTBED_PREFIX);
+		sakList.add(key);
+		return sakList;
+	}
+
+	@After
     public void tearDown() throws Exception {
         secretAuthenticationKeyList = null;
         reservationDataMap = null;
@@ -331,7 +361,7 @@ public class SingleUrnPrefixInmemoryTest {
         for (int i = 0; i < reservationDataMap.size(); i++) {
             List<SecretReservationKey> tempKeyList = new LinkedList<SecretReservationKey>();
             tempKeyList.add(reservationKeyMap.get(i));
-            rs.deleteReservation(Collections.<SecretAuthenticationKey>emptyList(), tempKeyList);
+            rs.deleteReservation(secretAuthenticationKeyList, tempKeyList);
         }
     }
 
@@ -340,7 +370,7 @@ public class SingleUrnPrefixInmemoryTest {
             List<SecretReservationKey> tempKeyList = new LinkedList<SecretReservationKey>();
             tempKeyList.add(reservationKeyMap.get(i));
             try {
-                rs.deleteReservation(Collections.<SecretAuthenticationKey>emptyList(), tempKeyList);
+                rs.deleteReservation(secretAuthenticationKeyList, tempKeyList);
                 fail("Should have raised an ReservervationNotFoundExceptionException");
             }
             catch (ReservervationNotFoundExceptionException expected) {
@@ -367,7 +397,7 @@ public class SingleUrnPrefixInmemoryTest {
 
     }
 
-    private GetReservations createPeriod(DateTime from, DateTime to) throws DatatypeConfigurationException {
+	private GetReservations createPeriod(DateTime from, DateTime to) throws DatatypeConfigurationException {
         GetReservations period = new GetReservations();
         period.setFrom(datatypeFactory.newXMLGregorianCalendar(from.toGregorianCalendar()));
         period.setTo(datatypeFactory.newXMLGregorianCalendar(to.toGregorianCalendar()));

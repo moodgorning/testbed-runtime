@@ -29,20 +29,16 @@
 	<parent>
 		<groupId>de.uniluebeck.itm</groupId>
 		<artifactId>tr</artifactId>
-		<version>0.7.0.2</version>
+		<version>0.7.2</version>
 		<relativePath>../../</relativePath>
 	</parent>
 
     <artifactId>tr.snaa-shibboleth</artifactId>
     <packaging>jar</packaging>
-    <name>TR :: SNAA Shibboleth Implementation</name>
+    <name>TR :: SNAA Shibboleth</name>
 
     <dependencies>
 
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-        </dependency>
         <dependency>
             <groupId>de.uniluebeck.itm</groupId>
             <artifactId>tr.snaa-api</artifactId>
@@ -51,19 +47,18 @@
             <groupId>de.uniluebeck.itm</groupId>
             <artifactId>tr.shibboauth</artifactId>
         </dependency>
-        <dependency>
-            <groupId>de.uniluebeck.itm</groupId>
-            <artifactId>tr.util</artifactId>
+
+		<dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
         </dependency>
-
-
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
         </dependency>
     </dependencies>
 

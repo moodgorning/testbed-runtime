@@ -32,6 +32,8 @@ import java.util.Collection;
 import java.util.List;
 
 import eu.wisebed.api.common.Message;
+import eu.wisebed.api.wsn.ChannelHandlerConfiguration;
+import eu.wisebed.api.wsn.ChannelHandlerDescription;
 import eu.wisebed.api.wsn.Program;
 
 
@@ -39,16 +41,10 @@ public class WSNPreconditions {
 
 	private CommonPreconditions commonPreconditions;
 
-	public WSNPreconditions() {
+	public WSNPreconditions(Iterable<String> servedUrnPrefixes, Iterable<String> reservedNodeUrns) {
 		this.commonPreconditions = new CommonPreconditions();
-	}
-
-	public void addKnownNodeUrns(String... reservedNodeUrns) {
-		commonPreconditions.addKnownNodeUrns(reservedNodeUrns);
-	}
-
-	public void addServedUrnPrefixes(String... servedUrnPrefixes) {
-		commonPreconditions.addServedUrnPrefixes(servedUrnPrefixes);
+		this.commonPreconditions.addServedUrnPrefixes(servedUrnPrefixes);
+		this.commonPreconditions.addKnownNodeUrns(reservedNodeUrns);
 	}
 
 	public void checkAreNodesAliveArguments(Collection<String> nodes) {
@@ -154,4 +150,12 @@ public class WSNPreconditions {
 		commonPreconditions.checkNodesKnown(nodeA, nodeB);
 	}
 
+	public void checkSetChannelPipelineArguments(final List<String> nodes,
+												 final List<ChannelHandlerConfiguration> channelHandlerConfigurations) {
+
+		checkNotNull(nodes);
+		checkNotNull(channelHandlerConfigurations);
+
+		commonPreconditions.checkNodesKnown(nodes);
+	}
 }

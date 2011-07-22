@@ -150,7 +150,7 @@ public class DeliveryManager implements Service {
 
 		if (deliveryWorker != null) {
 
-			log.debug("Removing controller endpoint {} from the set of controllers.", endpointUrl);
+			log.debug("{} => Removing controller endpoint from the set of controllers.", endpointUrl);
 			deliveryWorker.stopDelivery();
 
 			ImmutableMap.Builder<String, DeliveryWorker> controllerEndpointsBuilder = ImmutableMap.builder();
@@ -164,7 +164,7 @@ public class DeliveryManager implements Service {
 			controllers = controllerEndpointsBuilder.build();
 
 		} else {
-			log.debug("Not removing controller endpoint {} as it was not in the set of controllers.", endpointUrl);
+			log.debug("{} => Not removing controller endpoint as it was not in the set of controllers.", endpointUrl);
 		}
 
 	}
@@ -330,7 +330,7 @@ public class DeliveryManager implements Service {
 	@Override
 	public void stop() {
 		if (running) {
-			log.debug("Stopping DeliveryManager (asynchronously).");
+			log.debug("Stopping delivery manager (asynchronously)...");
 			new Thread("DeliveryManager-ShutdownThread") {
 				@Override
 				public void run() {
@@ -355,7 +355,7 @@ public class DeliveryManager implements Service {
 						}
 					}
 
-					log.debug("DeliveryManager stopped!");
+					log.debug("Stopped delivery manager!");
 				}
 			}.start();
 			experimentEnded();

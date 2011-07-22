@@ -29,7 +29,7 @@
 	<parent>
 		<groupId>de.uniluebeck.itm</groupId>
 		<artifactId>tr</artifactId>
-		<version>0.7.0.2</version>
+		<version>0.7.2</version>
 		<relativePath>../../</relativePath>
 	</parent>
 
@@ -39,8 +39,8 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>de.uniluebeck.itm</groupId>
-			<artifactId>tr.wsn-api</artifactId>
+			<groupId>de.uniluebeck.itm.itmutils</groupId>
+			<artifactId>itmutils</artifactId>
 		</dependency>
 	</dependencies>
 

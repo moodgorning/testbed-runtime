@@ -29,7 +29,7 @@
 	<groupId>de.uniluebeck.itm</groupId>
 	<artifactId>tr</artifactId>
 	<packaging>pom</packaging>
-	<version>0.7.0.2</version>
+	<version>0.7.2</version>
 	<name>TR</name>
 
 	<modules>
@@ -41,18 +41,18 @@
 		<module>snaa/</module>
 
 		<module>shibboauth</module>
-		<module>util</module>
 		<module>motelist</module>
 		<module>node-api</module>
 		<module>wiseml</module>
 		<module>wiseml-merger</module>
-		<module>motap</module>
+		<module>federator-utils</module>
 
 	</modules>
 
 	<dependencyManagement>
 		<dependencies>
 
+			<!-- project module dependencies -->
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
 				<artifactId>tr.rs-persistence</artifactId>
@@ -157,12 +157,6 @@
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.snaa-cmdline-server</artifactId>
-				<classifier>onejar</classifier>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.uniluebeck.itm</groupId>
 				<artifactId>tr.snaa-dummy</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -208,11 +202,6 @@
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.util</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.uniluebeck.itm</groupId>
 				<artifactId>tr.rs-persistence-gcal</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -228,11 +217,6 @@
 			</dependency>
 			<dependency>
 				<groupId>de.uniluebeck.itm</groupId>
-				<artifactId>tr.motelist</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.uniluebeck.itm</groupId>
 				<artifactId>tr.scripting-client</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -243,12 +227,69 @@
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>4.8.1</version>
-				<scope>test</scope>
+				<groupId>de.uniluebeck.itm</groupId>
+				<artifactId>tr.motelist</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.uniluebeck.itm</groupId>
+				<artifactId>tr.federator-utils</artifactId>
+				<version>${project.version}</version>
 			</dependency>
 
+			<!-- other itm projects -->
+			<dependency>
+				<groupId>de.uniluebeck.itm.itmutils</groupId>
+				<artifactId>itmutils</artifactId>
+				<version>0.3</version>
+			</dependency>
+			<dependency>
+				<groupId>de.uniluebeck.itm.wsn-device-utils</groupId>
+				<artifactId>wsn-device-utils</artifactId>
+				<version>0.3.2</version>
+			</dependency>
+			<dependency>
+				<groupId>de.uniluebeck.itm</groupId>
+				<artifactId>wsn-device-drivers-factories</artifactId>
+				<version>0.3.7</version>
+			</dependency>
+			<dependency>
+				<groupId>de.uniluebeck.itm</groupId>
+				<artifactId>wsn-device-drivers-core</artifactId>
+				<version>0.3.7</version>
+			</dependency>
+			<dependency>
+				<groupId>de.uniluebeck.itm.netty-iostream</groupId>
+				<artifactId>netty-iostream</artifactId>
+				<version>0.3</version>
+			</dependency>
+			<dependency>
+				<groupId>de.uniluebeck.itm.netty.handlerstack</groupId>
+				<artifactId>dlestxetx</artifactId>
+				<version>1.2</version>
+			</dependency>
+			<dependency>
+				<groupId>de.uniluebeck.itm.netty.handlerstack</groupId>
+				<artifactId>protocol-collection</artifactId>
+				<version>1.2</version>
+			</dependency>
+			<dependency>
+				<groupId>de.uniluebeck.itm.netty.handlerstack</groupId>
+				<artifactId>factory</artifactId>
+				<version>1.2</version>
+			</dependency>
+			<dependency>
+				<groupId>de.uniluebeck.itm.netty.handlerstack</groupId>
+				<artifactId>netty-handlerstack</artifactId>
+				<version>1.2</version>
+			</dependency>
+			<dependency>
+				<groupId>de.uniluebeck.itm.netty.handlerstack</groupId>
+				<artifactId>wisebed</artifactId>
+				<version>1.2</version>
+			</dependency>
+
+			<!-- 3rd party libraries -->
 			<dependency>
 				<groupId>com.google.inject</groupId>
 				<artifactId>guice</artifactId>
@@ -320,6 +361,11 @@
 				<version>1.2</version>
 			</dependency>
 			<dependency>
+				<groupId>commons-configuration</groupId>
+				<artifactId>commons-configuration</artifactId>
+				<version>1.6</version>
+			</dependency>
+			<dependency>
 				<groupId>commons-codec</groupId>
 				<artifactId>commons-codec</artifactId>
 				<version>1.4</version>
@@ -327,7 +373,7 @@
 			<dependency>
 				<groupId>commons-lang</groupId>
 				<artifactId>commons-lang</artifactId>
-				<version>2.3</version>
+				<version>2.5</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-logging</groupId>
@@ -409,23 +455,64 @@
 				<artifactId>netty</artifactId>
 				<version>3.2.3.Final</version>
 			</dependency>
-
 			<dependency>
 				<groupId>org.beanshell</groupId>
 				<artifactId>bsh</artifactId>
 				<version>2.0b4</version>
 			</dependency>
-
 			<dependency>
 				<groupId>jtidy</groupId>
 				<artifactId>jtidy</artifactId>
 				<version>4aug2000r7-dev</version>
+			</dependency>
+			<dependency>
+				<groupId>apache-lang</groupId>
+				<artifactId>commons-lang</artifactId>
+				<version>2.0</version>
+			</dependency>
+			<dependency>
+				<groupId>net.sf.opencsv</groupId>
+				<artifactId>opencsv</artifactId>
+				<version>2.0</version>
+			</dependency>
+
+			<!-- unit testing dependencies -->
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>4.8.1</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-all</artifactId>
+				<version>1.8.1</version>
+				<scope>test</scope>
 			</dependency>
 
 		</dependencies>
 	</dependencyManagement>
 
 	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<version>2.2</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>2.3.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>2.8</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -437,6 +524,13 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<extensions>
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-ssh-external</artifactId>
+				<version>1.0</version>
+			</extension>
+		</extensions>
 	</build>
 
 	<pluginRepositories>
@@ -508,12 +602,12 @@
 		<repository>
 			<id>itm-maven-repository-releases</id>
 			<name>ITM UzL Maven releases repository</name>
-			<url>scp://itm01.itm.uni-luebeck.de/www/itm/projects/maven/releases</url>
+			<url>scpexe://itm01.itm.uni-luebeck.de/www/itm/projects/maven/releases</url>
 		</repository>
 		<snapshotRepository>
 			<id>itm-maven-repository-snapshots</id>
 			<name>ITM UzL Maven snapshots repository</name>
-			<url>scp://itm01.itm.uni-luebeck.de/www/itm/projects/maven/snapshots</url>
+			<url>scpexe://itm01.itm.uni-luebeck.de/www/itm/projects/maven/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
 
@@ -522,7 +616,7 @@
 	</properties>
 
 	<scm>
-		<connection>scm:git:https://itm@github.com/itm/testbed-runtime.git</connection>
+		<connection>scm:git:git@github.com:itm/testbed-runtime.git</connection>
 	</scm>
 
 </project>

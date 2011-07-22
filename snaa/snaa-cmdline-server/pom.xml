@@ -29,7 +29,7 @@
 	<parent>
 		<groupId>de.uniluebeck.itm</groupId>
 		<artifactId>tr</artifactId>
-		<version>0.7.0.2</version>
+		<version>0.7.2</version>
 		<relativePath>../../</relativePath>
 	</parent>
 
@@ -63,11 +63,15 @@
 			<groupId>de.uniluebeck.itm</groupId>
 			<artifactId>tr.snaa-wisebed</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>de.uniluebeck.itm</groupId>
-			<artifactId>tr.shibboauth</artifactId>
-		</dependency>
 
+		<dependency>
+			<groupId>commons-cli</groupId>
+			<artifactId>commons-cli</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.inject</groupId>
+			<artifactId>guice</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
@@ -81,69 +85,33 @@
 			<artifactId>guava</artifactId>
 		</dependency>
 
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.8.1</version>
-            <scope>test</scope>
-        </dependency>        
 	</dependencies>
 
 	<build>
 		<plugins>
-			
-			<!-- <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.2.1</version>
 				<configuration>
+					<descriptors>
+						<descriptor>assembly.xml</descriptor>
+					</descriptors>
 					<archive>
 						<manifest>
-							<addClasspath>true</addClasspath>
-							<mainClass>de.uniluebeck.itm.tr.snaa.cmdline.server.SNAAServerrver</mainClass>
+							<mainClass>de.uniluebeck.itm.tr.snaa.cmdline.server.SNAAServer</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.dstovall</groupId>
-				<artifactId>onejar-maven-plugin</artifactId>
-				<version>1.4.1</version>
 				<executions>
 					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
 						<goals>
-							<goal>one-jar</goal>
+							<goal>single</goal>
 						</goals>
 					</execution>
 				</executions>
-			</plugin> -->
-			
-			<!--
-            Using self-patched version of onejar-maven-plugin to support
-            newer version of One-Jar that includes some bug fixes we need.
-            Can be removed later as soon as onejar-maven-plugin supports
-            the newer versions
-            -->
-            <plugin>
-                <groupId>org.dstovall</groupId>
-                <artifactId>onejar-maven-plugin-rc8fix</artifactId>
-                <version>1.4.10</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <configuration>
-                            <mainClass>de.uniluebeck.itm.tr.snaa.cmdline.server.SNAAServer</mainClass>
-                            <onejarVersion>0.97-RC10</onejarVersion>
-                            <attachToBuild>true</attachToBuild>
-                            <classifier>onejar</classifier>
-							<urlFactory>com.simontuffs.onejar.JarClassLoader$OneJarURLFactory</urlFactory>
-                        </configuration>
-                        <goals>
-                            <goal>one-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-			
+			</plugin>
 		</plugins>
 	</build>
 

@@ -23,20 +23,38 @@
 
 package de.uniluebeck.itm.tr.rs.cmdline;
 
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.Binder;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
+import com.google.inject.name.Names;
+import com.google.inject.util.Providers;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpServer;
+import de.uniluebeck.itm.tr.federatorutils.FederationManager;
 import de.uniluebeck.itm.tr.rs.dummy.DummyRS;
 import de.uniluebeck.itm.tr.rs.federator.FederatorRS;
 import de.uniluebeck.itm.tr.rs.persistence.RSPersistence;
 import de.uniluebeck.itm.tr.rs.persistence.gcal.GCalRSPersistence;
 import de.uniluebeck.itm.tr.rs.persistence.inmemory.InMemoryRSPersistence;
 import de.uniluebeck.itm.tr.rs.persistence.jpa.RSPersistenceJPAFactory;
+import de.uniluebeck.itm.tr.rs.singleurnprefix.ServedNodeUrnsProvider;
 import de.uniluebeck.itm.tr.rs.singleurnprefix.SingleUrnPrefixRS;
+import eu.wisebed.api.rs.RS;
 import eu.wisebed.api.rs.RSExceptionException;
+import eu.wisebed.api.sm.SessionManagement;
+import eu.wisebed.api.snaa.SNAA;
+import eu.wisebed.testbed.api.rs.RSServiceHelper;
+import eu.wisebed.testbed.api.snaa.helpers.SNAAServiceHelper;
+import eu.wisebed.testbed.api.wsn.WSNServiceHelper;
 import org.apache.commons.cli.*;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.ws.Endpoint;
 import java.io.FileReader;
@@ -50,12 +68,8 @@ public class RSServer {
 
 	private static HttpServer server;
 
-	private static final Logger log = Logger.getLogger(RSServer.class);
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(RSServer.class);
 
-	/**
-	 * @param args
-	 * @throws Exception
-	 */
 	public static void main(String[] args) throws Exception {
 
 		String propertyFile = null;
@@ -86,7 +100,7 @@ public class RSServer {
 			}
 
 		} catch (Exception e) {
-			log.fatal("Invalid command line: " + e, e);
+			log.error("Invalid command line: " + e, e);
 			usage(options);
 		}
 
@@ -100,7 +114,9 @@ public class RSServer {
 				log.info("Received shutdown signal. Shutting down...");
 				server.stop(3);
 			}
-		}));
+		}
+		)
+		);
 
 	}
 
@@ -120,7 +136,7 @@ public class RSServer {
 			if ("dummy".equals(type)) {
 
 				urnprefix = props.getProperty(rs + ".urnprefix", "urn:default:" + rs);
-				startDummyRS(path, urnprefix);
+				startDummyRS(path);
 
 			} else if ("singleurnprefix".equals(type)) {
 
@@ -154,17 +170,59 @@ public class RSServer {
 
 	}
 
-	private static void startSingleUrnPrefixRS(String path, String urnprefix, Properties props, String propsPrefix)
+	private static void startSingleUrnPrefixRS(final String path, final String urnPrefix, final Properties props,
+											   final String propsPrefix)
 			throws Exception {
 
-		String snaaEndpointUrl = props.getProperty(propsPrefix + ".snaaendpointurl",
+		final String snaaEndpointUrl = props.getProperty(
+				propsPrefix + ".snaaendpointurl",
 				"http://localhost:8080/snaa/dummy1"
 		);
-		String sessionManagementEndpointUrl = props.getProperty(propsPrefix + ".sessionmanagementendpointurl");
+		final String sessionManagementEndpointUrl = props.getProperty(propsPrefix + ".sessionmanagementendpointurl");
 
-		RSPersistence persistence = createRSPersistence(props, propsPrefix + ".persistence");
+		final RSPersistence persistence = createRSPersistence(props, propsPrefix + ".persistence");
 
-		SingleUrnPrefixRS rs = new SingleUrnPrefixRS(urnprefix, snaaEndpointUrl, sessionManagementEndpointUrl, persistence);
+		final Injector injector = Guice.createInjector(new Module() {
+			@Override
+			public void configure(final Binder binder) {
+
+				binder.bind(String.class)
+						.annotatedWith(Names.named("SingleUrnPrefixRS.urnPrefix"))
+						.toInstance(urnPrefix);
+
+				binder.bind(SNAA.class)
+						.toInstance(SNAAServiceHelper.getSNAAService(snaaEndpointUrl));
+
+				if (sessionManagementEndpointUrl == null) {
+
+					binder.bind(SessionManagement.class)
+							.toProvider(Providers.<SessionManagement>of(null));
+
+					binder.bind(String[].class)
+							.annotatedWith(Names.named("SingleUrnPrefixRS.servedNodeUrns"))
+							.toProvider(Providers.<String[]>of(null));
+
+				} else {
+
+					binder.bind(SessionManagement.class)
+							.toInstance(WSNServiceHelper.getSessionManagementService(sessionManagementEndpointUrl));
+
+					binder.bind(String[].class)
+							.annotatedWith(Names.named("SingleUrnPrefixRS.servedNodeUrns"))
+							.toProvider(ServedNodeUrnsProvider.class);
+				}
+
+
+				binder.bind(RSPersistence.class)
+						.toInstance(persistence);
+
+				binder.bind(RS.class)
+						.to(SingleUrnPrefixRS.class);
+			}
+		}
+		);
+
+		RS rs = injector.getInstance(RS.class);
 
 		HttpContext context = server.createContext(path);
 		Endpoint endpoint = Endpoint.create(rs);
@@ -192,7 +250,7 @@ public class RSServer {
 		throw new IllegalArgumentException("Persistence type " + persistenceType + " unknown!");
 	}
 
-	private static void startDummyRS(String path, String prefix) {
+	private static void startDummyRS(String path) {
 
 		DummyRS rs = new DummyRS();
 
@@ -210,7 +268,8 @@ public class RSServer {
 		// limit number of threads to 3 as that should be sufficient for a reservation system ;-)
 		server.setExecutor(Executors.newCachedThreadPool(
 				new ThreadFactoryBuilder().setNameFormat("RS-Thread %d").build()
-		));
+		)
+		);
 		server.start();
 
 	}
@@ -233,12 +292,29 @@ public class RSServer {
 	private static void startFederator(String path, Map<String, Set<String>>... prefixSets) {
 
 		// union the prefix sets to one set
-		Map<String, Set<String>> prefixSet = new HashMap<String, Set<String>>();
+		ImmutableMap.Builder<String, ImmutableSet<String>> prefixSetBuilder = ImmutableMap.builder();
+
 		for (Map<String, Set<String>> p : prefixSets) {
-			prefixSet.putAll(p);
+			for (Map.Entry<String, Set<String>> entry : p.entrySet()) {
+				prefixSetBuilder.put(entry.getKey(), ImmutableSet.copyOf(entry.getValue()));
+			}
 		}
 
-		FederatorRS federator = new FederatorRS(prefixSet);
+		FederationManager<RS> federationManager = new FederationManager<RS>(
+				new Function<String, RS>() {
+					@Override
+					public RS apply(final String s) {
+						return RSServiceHelper.getRSService(s);
+					}
+				}, prefixSetBuilder.build()
+		);
+
+		FederatorRS federator = new FederatorRS(
+				federationManager,
+				Executors.newCachedThreadPool(
+						new ThreadFactoryBuilder().setNameFormat("FederatorRS-Thread %d").build()
+				)
+		);
 
 		HttpContext context = server.createContext(path);
 		Endpoint endpoint = Endpoint.create(federator);

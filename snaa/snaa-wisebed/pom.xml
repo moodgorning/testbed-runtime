@@ -29,7 +29,7 @@
 	<parent>
 		<groupId>de.uniluebeck.itm</groupId>
 		<artifactId>tr</artifactId>
-		<version>0.7.0.2</version>
+		<version>0.7.2</version>
 		<relativePath>../../</relativePath>
 	</parent>
 
@@ -38,6 +38,7 @@
 	<name>TR :: SNAA WISEBED (federator and backend)</name>
 
 	<dependencies>
+
 		<dependency>
 			<groupId>de.uniluebeck.itm</groupId>
 			<artifactId>tr.snaa-api</artifactId>
@@ -50,10 +51,16 @@
 			<groupId>de.uniluebeck.itm</groupId>
 			<artifactId>tr.snaa-shibboleth</artifactId>
 		</dependency>
+
 		<dependency>
-			<groupId>de.uniluebeck.itm</groupId>
-			<artifactId>tr.util</artifactId>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.google.inject</groupId>
+			<artifactId>guice</artifactId>
+		</dependency>
+
 	</dependencies>
 
 </project>

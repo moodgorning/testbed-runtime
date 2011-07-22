@@ -23,19 +23,20 @@
 
 package de.uniluebeck.itm.wisebed.cmdlineclient.jobs;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import de.uniluebeck.itm.tr.util.StringUtils;
+import eu.wisebed.api.controller.RequestStatus;
+import eu.wisebed.api.controller.Status;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Sets;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import de.uniluebeck.itm.tr.util.StringUtils;
-import eu.wisebed.api.controller.RequestStatus;
-import eu.wisebed.api.controller.Status;
+import static com.google.common.collect.Lists.newArrayList;
 
 public class Job {
 
@@ -64,32 +65,29 @@ public class Job {
 	public enum JobType {
 
 		areNodesAlive,
-		resetNodes,
-		send,
-		flashPrograms,
-		setVirtualLink,
 		destroyVirtualLink,
 		disableNode,
-		enableNode,
 		disablePhysicalLink,
-		enablePhysicalLink
+		enableNode,
+		enablePhysicalLink,
+		flashPrograms,
+		resetNodes,
+		send,
+		setChannelPipeline,
+		setVirtualLink,
 
 	}
 
 	public Job(String description, String requestId, List<String> nodeIds, JobType jobType) {
 		this.description = description;
 		this.requestId = requestId;
-		this.nodeIds = Sets.newHashSet(nodeIds);
+		this.nodeIds = nodeIds.size() == 0 ? Sets.newHashSet("") : Sets.newHashSet(nodeIds);
 		this.jobType = jobType;
 		this.results = new JobResult(jobType);
 	}
 
 	public Job(String description, String requestId, String nodeId, JobType jobType) {
-		this.description = description;
-		this.requestId = requestId;
-		this.nodeIds = Sets.newHashSet(nodeId);
-		this.jobType = jobType;
-		this.results = new JobResult(jobType);
+		this(description, requestId, newArrayList(nodeId), jobType);
 	}
 
 	public String getRequestId() {
@@ -124,6 +122,8 @@ public class Job {
 			return value == 1;
 		} else if (jobType == JobType.enablePhysicalLink) {
 			return value == 1;
+		} else if (jobType == JobType.setChannelPipeline) {
+			return value == 1;
 		}
 
 		return false;
@@ -150,6 +150,8 @@ public class Job {
 		} else if (jobType == JobType.disablePhysicalLink) {
 			return value < 1;
 		} else if (jobType == JobType.enablePhysicalLink) {
+			return value < 1;
+		} else if (jobType == JobType.setChannelPipeline) {
 			return value < 1;
 		}
 
@@ -191,11 +193,12 @@ public class Job {
 					} else if (error) {
 
 						if (log.isInfoEnabled()) {
-							log.info("Job[{}] failed for node {} with message [{}]", new Object[] {
-								description,
-								s.getNodeId(),
-								s.getMsg()
-							});
+							log.info("Job[{}] failed for node {} with message [{}]", new Object[]{
+									description,
+									s.getNodeId(),
+									s.getMsg()
+							}
+							);
 						}
 
 						results.addResult(s.getNodeId(), !error, s.getMsg());
@@ -203,22 +206,24 @@ public class Job {
 					}
 
 				} else {
-					log.warn("Received status for unknown node " + s.getNodeId() + ": " + StringUtils.jaxbMarshal(s));
+					log.warn(
+							"Received status for unknown node " + s.getNodeId() + ": " + StringUtils.jaxbMarshal(s)
+					);
+				}
+
+				if (nodeIds.size() == 0) {
+					log.debug(
+							successfulCount + " nodeIds done, " + errorCount + " failed for " + this.jobType + " ["
+									+ description + "] request id: " + requestId
+					);
+
+					results.setEndTime(new DateTime());
+					results.setStartTime(startTime);
+					results.setDescription(description);
+					notifyListeners(results);
+					return true;
 				}
 			}
-
-		}
-
-		if (nodeIds.size() == 0) {
-			log.debug(successfulCount + " nodeIds done, " + errorCount + " failed for " + this.jobType + " ["
-					+ description + "] request id: " + requestId
-			);
-
-			results.setStartTime(startTime);
-			results.setEndTime(endTime);
-			results.setDescription(description);
-			notifyListeners(results);
-			return true;
 		}
 
 		return false;
@@ -226,10 +231,6 @@ public class Job {
 
 	public void setStartTime(DateTime startTime) {
 		this.startTime = startTime;
-	}
-
-	public void setEndTime(DateTime endTime) {
-		this.endTime = endTime;
 	}
 
 	public DateTime getStartTime() {

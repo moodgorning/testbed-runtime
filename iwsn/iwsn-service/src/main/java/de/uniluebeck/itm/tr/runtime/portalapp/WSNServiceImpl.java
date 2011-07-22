@@ -28,11 +28,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.itm.uniluebeck.tr.wiseml.WiseMLHelper;
+import de.uniluebeck.itm.netty.handlerstack.HandlerFactoryRegistry;
+import de.uniluebeck.itm.netty.handlerstack.protocolcollection.ProtocolCollection;
 import de.uniluebeck.itm.tr.runtime.wsnapp.UnknownNodeUrnsException;
 import de.uniluebeck.itm.tr.runtime.wsnapp.WSNApp;
 import de.uniluebeck.itm.tr.runtime.wsnapp.WSNAppMessages;
 import de.uniluebeck.itm.tr.runtime.wsnapp.WSNNodeMessageReceiver;
 import de.uniluebeck.itm.tr.util.*;
+import eu.wisebed.api.common.KeyValuePair;
 import eu.wisebed.api.common.Message;
 import eu.wisebed.api.wsn.ChannelHandlerConfiguration;
 import eu.wisebed.api.wsn.ChannelHandlerDescription;
@@ -59,6 +62,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Lists.newArrayList;
 
 @WebService(
 		serviceName = "WSNService",
@@ -98,40 +102,38 @@ public class WSNServiceImpl implements WSNService {
 		}
 
 		@Override
-		public void receive(WSNAppMessages.Message wsnMessage) {
+		public void receive(final byte[] bytes, final String sourceNodeId, final String timestamp) {
 
 			/* this is a message that was received from a sensor node. we now have to check if this is a virtual link
 			 * message. in that case we will deliver it to the destination node if there's a virtual link currently.
 			 * if the message is a virtual broadcast we'll deliver it to all destinations this node's connected to.
 			 * if the message is not a virtual link we'll deliver it to the controller of the experiment as it is. */
 
-			if (!reservedNodes.contains(wsnMessage.getSourceNodeId())) {
-				log.warn("Received message from unreserved node \"{}\".", wsnMessage.getSourceNodeId());
+			if (!reservedNodes.contains(sourceNodeId)) {
+				log.warn("Received message from unreserved node \"{}\".", sourceNodeId);
 				return;
 			}
 
 			// check if message is a virtual link message
-			boolean isVirtualLinkMessage = wsnMessage.getBinaryData().byteAt(0) == MESSAGE_TYPE_PLOT &&
-					wsnMessage.getBinaryData().byteAt(1) == NODE_OUTPUT_VIRTUAL_LINK;
+			boolean isVirtualLinkMessage = bytes.length > 1 && bytes[0] == MESSAGE_TYPE_PLOT &&
+					bytes[1] == NODE_OUTPUT_VIRTUAL_LINK;
 
 			if (!isVirtualLinkMessage) {
-				deliverNonVirtualLinkMessageToControllers(wsnMessage);
+				deliverNonVirtualLinkMessageToControllers(bytes, sourceNodeId, timestamp);
 			} else {
-				deliverVirtualLinkMessage(wsnMessage);
+				deliverVirtualLinkMessage(bytes, sourceNodeId, timestamp);
 			}
 		}
 
-		private void deliverVirtualLinkMessage(final WSNAppMessages.Message wsnMessage) {
+		private void deliverVirtualLinkMessage(final byte[] bytes, final String sourceNodeId, final String timestamp) {
 
-			byte[] binaryData = wsnMessage.getBinaryData().toByteArray();
-
-			long destinationNode = readDestinationNodeURN(binaryData);
-			Map<String, WSN> recipients =
-					determineVirtualLinkMessageRecipients(wsnMessage.getSourceNodeId(), destinationNode);
+			long destinationNode = readDestinationNodeURN(bytes);
+			Map<String, WSN> recipients = determineVirtualLinkMessageRecipients(sourceNodeId, destinationNode);
 
 			if (recipients.size() > 0) {
 
-				Message outboundVirtualLinkMessage = constructOutboundVirtualLinkMessage(wsnMessage, binaryData);
+				Message outboundVirtualLinkMessage =
+						constructOutboundVirtualLinkMessage(bytes, sourceNodeId, timestamp);
 
 				for (Map.Entry<String, WSN> recipient : recipients.entrySet()) {
 
@@ -140,7 +142,7 @@ public class WSNServiceImpl implements WSNService {
 
 					executorService.execute(
 							new DeliverVirtualLinkMessageRunnable(
-									wsnMessage.getSourceNodeId(),
+									sourceNodeId,
 									targetNode,
 									recipientEndpointProxy,
 									outboundVirtualLinkMessage
@@ -150,8 +152,8 @@ public class WSNServiceImpl implements WSNService {
 			}
 		}
 
-		private Message constructOutboundVirtualLinkMessage(final WSNAppMessages.Message wsnMessage,
-															final byte[] binaryData) {
+		private Message constructOutboundVirtualLinkMessage(final byte[] bytes, final String sourceNodeId,
+															final String timestamp) {
 
 			// byte 0: ISense Packet Type
 			// byte 1: Node API Command Type
@@ -163,9 +165,9 @@ public class WSNServiceImpl implements WSNService {
 			// byte 13-13+Payload Length: Payload
 
 			Message outboundVirtualLinkMessage = new Message();
-			outboundVirtualLinkMessage.setSourceNodeId(wsnMessage.getSourceNodeId());
+			outboundVirtualLinkMessage.setSourceNodeId(sourceNodeId);
 			outboundVirtualLinkMessage.setTimestamp(
-					datatypeFactory.newXMLGregorianCalendar(wsnMessage.getTimestamp())
+					datatypeFactory.newXMLGregorianCalendar(timestamp)
 			);
 
 			// construct message that is actually sent to the destination node URN
@@ -174,7 +176,7 @@ public class WSNServiceImpl implements WSNService {
 			header.writeByte(WISELIB_VIRTUAL_LINK_MESSAGE);
 			header.writeByte(0); // request id according to Node API
 
-			ChannelBuffer payload = ChannelBuffers.wrappedBuffer(binaryData, 2, binaryData.length - 2);
+			ChannelBuffer payload = ChannelBuffers.wrappedBuffer(bytes, 2, bytes.length - 2);
 			ChannelBuffer packet = ChannelBuffers.wrappedBuffer(header, payload);
 
 			byte[] outboundVirtualLinkMessageBinaryData = new byte[packet.readableBytes()];
@@ -222,14 +224,15 @@ public class WSNServiceImpl implements WSNService {
 			return buffer.getLong(5);
 		}
 
-		private void deliverNonVirtualLinkMessageToControllers(final WSNAppMessages.Message wsnMessage) {
+		private void deliverNonVirtualLinkMessageToControllers(final byte[] bytes, final String sourceNodeId,
+															   final String timestamp) {
 
-			XMLGregorianCalendar timestamp = datatypeFactory.newXMLGregorianCalendar(wsnMessage.getTimestamp());
+			XMLGregorianCalendar xmlTimestamp = datatypeFactory.newXMLGregorianCalendar(timestamp);
 
 			Message message = new Message();
-			message.setSourceNodeId(wsnMessage.getSourceNodeId());
-			message.setTimestamp(timestamp);
-			message.setBinaryData(wsnMessage.getBinaryData().toByteArray());
+			message.setSourceNodeId(sourceNodeId);
+			message.setTimestamp(xmlTimestamp);
+			message.setBinaryData(bytes);
 
 			deliveryManager.receive(message);
 		}
@@ -372,10 +375,7 @@ public class WSNServiceImpl implements WSNService {
 				new ThreadFactoryBuilder().setNameFormat("WSNService-Thread %d").build()
 		);
 
-		this.preconditions = new WSNPreconditions();
-		this.preconditions.addServedUrnPrefixes(urnPrefix);
-		this.preconditions.addKnownNodeUrns(reservedNodes);
-
+		this.preconditions = new WSNPreconditions(newArrayList(urnPrefix), newArrayList(reservedNodes));
 		this.reservedNodes = ImmutableSet.copyOf(reservedNodes);
 
 	}
@@ -457,7 +457,9 @@ public class WSNServiceImpl implements WSNService {
 		final long start = System.currentTimeMillis();
 
 		try {
-			wsnApp.send(new HashSet<String>(nodeIds), TypeConverter.convert(message), new WSNApp.Callback() {
+			wsnApp.send(new HashSet<String>(nodeIds), message.getBinaryData(), message.getSourceNodeId(),
+					message.getTimestamp().toXMLFormat(), new WSNApp.Callback() {
+
 				@Override
 				public void receivedRequestStatus(WSNAppMessages.RequestStatus requestStatus) {
 					long end = System.currentTimeMillis();
@@ -480,11 +482,39 @@ public class WSNServiceImpl implements WSNService {
 	}
 
 	@Override
-	public String setChannelPipeline(@WebParam(name = "nodes", targetNamespace = "") final List<String> nodes,
-									 @WebParam(name = "channelHandlerConfigurations", targetNamespace = "") final
-									 List<ChannelHandlerConfiguration> channelHandlerConfigurations) {
-		// TODO implement
-		throw new RuntimeException("Not yet implemented!");
+	public String setChannelPipeline(@WebParam(name = "nodes", targetNamespace = "")
+									 final List<String> nodes,
+									 @WebParam(name = "channelHandlerConfigurations", targetNamespace = "")
+									 final List<ChannelHandlerConfiguration> channelHandlerConfigurations) {
+
+		preconditions.checkSetChannelPipelineArguments(nodes, channelHandlerConfigurations);
+
+		log.debug("WSNServiceImpl.setChannelPipeline({}, {})", nodes, channelHandlerConfigurations);
+
+		final String requestId = secureIdGenerator.getNextId();
+		final long start = System.currentTimeMillis();
+
+		try {
+			wsnApp.setChannelPipeline(new HashSet<String>(nodes), channelHandlerConfigurations, new WSNApp.Callback() {
+
+				@Override
+				public void receivedRequestStatus(final WSNAppMessages.RequestStatus requestStatus) {
+					long end = System.currentTimeMillis();
+					log.debug("Received reply after {} ms.", (end - start));
+					deliveryManager.receiveStatus(TypeConverter.convert(requestStatus, requestId));
+				}
+
+				@Override
+				public void failure(final Exception e) {
+					deliveryManager.receiveFailureStatusMessages(nodes, requestId, e, -1);
+				}
+			}
+			);
+		} catch (UnknownNodeUrnsException e) {
+			deliveryManager.receiveUnknownNodeUrnRequestStatus(e.getNodeUrns(), e.getMessage(), requestId);
+		}
+
+		return requestId;
 	}
 
 	@Override
@@ -573,8 +603,22 @@ public class WSNServiceImpl implements WSNService {
 
 	@Override
 	public List<ChannelHandlerDescription> getSupportedChannelHandlers() {
-		// TODO implement
-		return Lists.newArrayList();
+
+		HandlerFactoryRegistry handlerFactoryRegistry = new HandlerFactoryRegistry();
+		try {
+			ProtocolCollection.registerProtocols(handlerFactoryRegistry);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
+		final List<ChannelHandlerDescription> channelHandlerDescriptions = newArrayList();
+
+		for (HandlerFactoryRegistry.ChannelHandlerDescription handlerDescription : handlerFactoryRegistry
+				.getChannelHandlerDescriptions()) {
+			channelHandlerDescriptions.add(convert(handlerDescription));
+		}
+
+		return channelHandlerDescriptions;
 	}
 
 	@Override
@@ -898,6 +942,21 @@ public class WSNServiceImpl implements WSNService {
 	public List<String> getFilters() {
 		log.debug("WSNServiceImpl.getFilters");
 		throw new java.lang.UnsupportedOperationException("Method is not yet implemented.");
+	}
+
+	private ChannelHandlerDescription convert(
+			final HandlerFactoryRegistry.ChannelHandlerDescription handlerDescription) {
+
+		ChannelHandlerDescription target = new ChannelHandlerDescription();
+		target.setDescription(handlerDescription.getDescription());
+		target.setName(handlerDescription.getName());
+		for (Map.Entry<String, String> entry : handlerDescription.getConfigurationOptions().entries()) {
+			final KeyValuePair keyValuePair = new KeyValuePair();
+			keyValuePair.setKey(entry.getKey());
+			keyValuePair.setValue(entry.getValue());
+			target.getConfigurationOptions().add(keyValuePair);
+		}
+		return target;
 	}
 
 }
