@@ -44,6 +44,7 @@ import de.uniluebeck.itm.wsn.deviceutils.macreader.DeviceMacReferenceMap;
 import de.uniluebeck.itm.wsn.deviceutils.observer.DeviceEvent;
 import de.uniluebeck.itm.wsn.deviceutils.observer.DeviceInfo;
 import de.uniluebeck.itm.wsn.deviceutils.observer.DeviceObserver;
+import de.uniluebeck.itm.wsn.deviceutils.observer.DeviceObserverListener;
 import de.uniluebeck.itm.wsn.drivers.core.Connection;
 import de.uniluebeck.itm.wsn.drivers.core.MacAddress;
 import de.uniluebeck.itm.wsn.drivers.core.async.AsyncAdapter;
@@ -199,8 +200,9 @@ public class WSNDeviceAppConnectorImpl extends AbstractListenable<WSNDeviceAppCo
 	private ScheduledExecutorService scheduledExecutorService;
 
 	private FilterPipeline filterPipeline = new FilterPipelineImpl();
+    private static DeviceObserver deviceObserver = null;
 
-	public WSNDeviceAppConnectorImpl(final String nodeUrn, final String nodeType, final String nodeUSBChipID,
+    public WSNDeviceAppConnectorImpl(final String nodeUrn, final String nodeType, final String nodeUSBChipID,
 									 final String nodeSerialInterface, final Integer timeoutNodeAPI,
 									 final Integer maximumMessageRate, final Integer timeoutReset,
 									 final Integer timeoutFlash, final SchedulerService schedulerService) {
@@ -233,10 +235,75 @@ public class WSNDeviceAppConnectorImpl extends AbstractListenable<WSNDeviceAppCo
 
 	@Override
 	public void start() throws Exception {
-		scheduledExecutorService = Executors.newScheduledThreadPool(1);
-		executorService = Executors.newCachedThreadPool();
-		schedulerService.execute(connectRunnable);
+        scheduledExecutorService = Executors.newScheduledThreadPool(1);
+        executorService = Executors.newCachedThreadPool();
+        
+        final DeviceMacReferenceMap deviceMacReferenceMap = new DeviceMacReferenceMap();
+		final Long macAsLong = StringUtils.parseHexOrDecLongFromUrn(nodeUrn);
+		final MacAddress nodeMacAddress = new MacAddress(macAsLong);
+
+		if (nodeUSBChipID != null && !"".equals(nodeUSBChipID)) {
+			deviceMacReferenceMap.put(nodeUSBChipID, nodeMacAddress);
+		}
+
+        if(deviceObserver == null){
+            deviceObserver = Guice
+				.createInjector(new DeviceUtilsModule(deviceMacReferenceMap))
+				.getInstance(DeviceObserver.class);
+            scheduledExecutorService.scheduleAtFixedRate(deviceObserver, 0, 1, TimeUnit.SECONDS);
+        }
+
+        deviceObserver.addListener(new DeviceObserverListener() {
+            @Override
+            public void deviceEvent(DeviceEvent deviceEvent) {
+                DeviceInfo deviceInfo = deviceEvent.getDeviceInfo();
+                if(deviceEvent.getType().equals(DeviceEvent.Type.REMOVED))
+                    return;
+                long macAddress = StringUtils.parseHexOrDecLongFromUrn(nodeUrn);
+                if(macAddress == deviceInfo.getMacAddress().toLong()){
+                    nodeSerialInterface = deviceInfo.getPort();
+                    try {
+                        log.info("connecting {}", deviceEvent);
+                        connect();
+                        resetNode(new Callback() {
+                            @Override
+                            public void success(byte[] replyPayload) {
+                                //To change body of implemented methods use File | Settings | File Templates.
+                            }
+
+                            @Override
+                            public void failure(byte responseType, byte[] replyPayload) {
+                                //To change body of implemented methods use File | Settings | File Templates.
+                            }
+
+                            @Override
+                            public void timeout() {
+                                //To change body of implemented methods use File | Settings | File Templates.
+                            }
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
+                }
+            }
+        });
+
+
+
+        log.info("started Device observer");
+        
+
+
+		//schedulerService.execute(connectRunnable);
 		nodeApi.start();
+
+
+
+
+//        threadFactory = new ThreadFactoryBuilder().setNameFormat("DeviceObserver %d").build();
+//		ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, threadFactory);
+
+
 	}
 
 	@Override
@@ -718,21 +785,16 @@ public class WSNDeviceAppConnectorImpl extends AbstractListenable<WSNDeviceAppCo
 
 	private void tryToDetectNodeSerialInterface() {
 
-		final DeviceMacReferenceMap deviceMacReferenceMap = new DeviceMacReferenceMap();
-		final Long macAsLong = StringUtils.parseHexOrDecLongFromUrn(nodeUrn);
+
+        final Long macAsLong = StringUtils.parseHexOrDecLongFromUrn(nodeUrn);
 		final MacAddress nodeMacAddress = new MacAddress(macAsLong);
 
-		if (nodeUSBChipID != null && !"".equals(nodeUSBChipID)) {
-			deviceMacReferenceMap.put(nodeUSBChipID, nodeMacAddress);
-		}
 
 		log.info("{} => Searching for port of {} device with MAC address {}.",
 				new Object[]{nodeUrn, nodeType, nodeMacAddress}
 		);
 
-		DeviceObserver deviceObserver = Guice
-				.createInjector(new DeviceUtilsModule(deviceMacReferenceMap))
-				.getInstance(DeviceObserver.class);
+
 
 		final ImmutableList<DeviceEvent> events = deviceObserver.getEvents();
 
