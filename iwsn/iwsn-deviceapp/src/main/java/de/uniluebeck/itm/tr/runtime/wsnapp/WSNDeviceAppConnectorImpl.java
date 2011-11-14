@@ -44,7 +44,6 @@ import de.uniluebeck.itm.wsn.deviceutils.macreader.DeviceMacReferenceMap;
 import de.uniluebeck.itm.wsn.deviceutils.observer.DeviceEvent;
 import de.uniluebeck.itm.wsn.deviceutils.observer.DeviceInfo;
 import de.uniluebeck.itm.wsn.deviceutils.observer.DeviceObserver;
-import de.uniluebeck.itm.wsn.deviceutils.observer.DeviceObserverListener;
 import de.uniluebeck.itm.wsn.drivers.core.Connection;
 import de.uniluebeck.itm.wsn.drivers.core.MacAddress;
 import de.uniluebeck.itm.wsn.drivers.core.async.AsyncAdapter;
@@ -200,9 +199,8 @@ public class WSNDeviceAppConnectorImpl extends AbstractListenable<WSNDeviceAppCo
 	private ScheduledExecutorService scheduledExecutorService;
 
 	private FilterPipeline filterPipeline = new FilterPipelineImpl();
-    private static DeviceObserver deviceObserver = null;
 
-    public WSNDeviceAppConnectorImpl(final String nodeUrn, final String nodeType, final String nodeUSBChipID,
+	public WSNDeviceAppConnectorImpl(final String nodeUrn, final String nodeType, final String nodeUSBChipID,
 									 final String nodeSerialInterface, final Integer timeoutNodeAPI,
 									 final Integer maximumMessageRate, final Integer timeoutReset,
 									 final Integer timeoutFlash, final SchedulerService schedulerService) {
@@ -235,75 +233,10 @@ public class WSNDeviceAppConnectorImpl extends AbstractListenable<WSNDeviceAppCo
 
 	@Override
 	public void start() throws Exception {
-        scheduledExecutorService = Executors.newScheduledThreadPool(1);
-        executorService = Executors.newCachedThreadPool();
-        
-        final DeviceMacReferenceMap deviceMacReferenceMap = new DeviceMacReferenceMap();
-		final Long macAsLong = StringUtils.parseHexOrDecLongFromUrn(nodeUrn);
-		final MacAddress nodeMacAddress = new MacAddress(macAsLong);
-
-		if (nodeUSBChipID != null && !"".equals(nodeUSBChipID)) {
-			deviceMacReferenceMap.put(nodeUSBChipID, nodeMacAddress);
-		}
-
-        if(deviceObserver == null){
-            deviceObserver = Guice
-				.createInjector(new DeviceUtilsModule(deviceMacReferenceMap))
-				.getInstance(DeviceObserver.class);
-            scheduledExecutorService.scheduleAtFixedRate(deviceObserver, 0, 1, TimeUnit.SECONDS);
-        }
-
-        deviceObserver.addListener(new DeviceObserverListener() {
-            @Override
-            public void deviceEvent(DeviceEvent deviceEvent) {
-                DeviceInfo deviceInfo = deviceEvent.getDeviceInfo();
-                if(deviceEvent.getType().equals(DeviceEvent.Type.REMOVED))
-                    return;
-                long macAddress = StringUtils.parseHexOrDecLongFromUrn(nodeUrn);
-                if(macAddress == deviceInfo.getMacAddress().toLong()){
-                    nodeSerialInterface = deviceInfo.getPort();
-                    try {
-                        log.info("connecting {}", deviceEvent);
-                        connect();
-                        resetNode(new Callback() {
-                            @Override
-                            public void success(byte[] replyPayload) {
-                                //To change body of implemented methods use File | Settings | File Templates.
-                            }
-
-                            @Override
-                            public void failure(byte responseType, byte[] replyPayload) {
-                                //To change body of implemented methods use File | Settings | File Templates.
-                            }
-
-                            @Override
-                            public void timeout() {
-                                //To change body of implemented methods use File | Settings | File Templates.
-                            }
-                        });
-                    } catch (Exception e) {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    }
-                }
-            }
-        });
-
-
-
-        log.info("started Device observer");
-        
-
-
-		//schedulerService.execute(connectRunnable);
+		scheduledExecutorService = Executors.newScheduledThreadPool(1);
+		executorService = Executors.newCachedThreadPool();
+		schedulerService.execute(connectRunnable);
 		nodeApi.start();
-
-
-
-
-//        threadFactory = new ThreadFactoryBuilder().setNameFormat("DeviceObserver %d").build();
-//		ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, threadFactory);
-
-
 	}
 
 	@Override
@@ -422,7 +355,6 @@ public class WSNDeviceAppConnectorImpl extends AbstractListenable<WSNDeviceAppCo
 	@Override
 	public void flashProgram(final WSNAppMessages.Program program,
 							 final FlashProgramCallback listener) {
-
 		log.debug("{} => WSNDeviceAppConnectorImpl.executeFlashPrograms()", nodeUrn);
 
 		if (isConnected()) {
@@ -434,9 +366,126 @@ public class WSNDeviceAppConnectorImpl extends AbstractListenable<WSNDeviceAppCo
 				listener.failure((byte) -1, msg.getBytes());
 
 			} else {
+				
+				final AsyncAdapter<Void> writeMacListener = new AsyncAdapter<Void>(){
+					
+					private int lastProgress = 90;
 
-				device.program(program.getProgram().toByteArray(), timeoutFlash, new AsyncAdapter<Void>() {
+					@Override
+					public void onExecute() {
+						log.debug("Writing MAC address.");
+					}
 
+					@Override
+					public void onCancel() {
+						String msg = "MAC writing operation was canceled.";
+						log.error("{} => write MAC: {}", nodeUrn, msg);
+						listener.failure((byte) -1, msg.getBytes());
+					}
+
+					@Override
+					public void onFailure(final Throwable throwable) {
+						String msg;
+
+						if (throwable instanceof ProgramChipMismatchException) {
+							msg = "Error reading binary image: " + throwable;
+						} else {
+							msg = "Error writing MAC address. Reason: " + throwable;
+						}
+						
+						log.warn("{} => write MAC: {}", nodeUrn, msg);
+						listener.failure((byte) -3, msg.getBytes());
+					}
+
+					@Override
+					public void onProgressChange(final float fraction) {
+						int newProgressWriting = (int) (fraction * 100);
+						int newProgress = 0;
+						if ((newProgressWriting % 10) == 0){
+							newProgress = 90 + (newProgressWriting / 10);
+						}
+
+						if (newProgress > lastProgress) {
+							log.debug("{} => Flashing progress: {}%.", nodeUrn, newProgress);
+							listener.progress((float)(newProgress / 100.0));
+							lastProgress = newProgress;
+						}
+					}
+
+					@Override
+					public void onSuccess(final Void result) {
+						log.debug("MAC address has been corrected.");
+						listener.success(null);
+					}					
+				};
+
+				final AsyncAdapter<MacAddress> readMacListener = new AsyncAdapter<MacAddress>(){
+					
+					@Override
+					public void onExecute() {
+						log.debug("Reading MAC address.");
+					}
+
+					@Override
+					public void onCancel() {
+						String msg = "MAC reading operation was canceled.";
+						log.error("{} => read MAC: {}", nodeUrn, msg);
+						listener.failure((byte) -1, msg.getBytes());
+					}
+
+					@Override
+					public void onFailure(final Throwable throwable) {
+						String msg;
+
+						if (throwable instanceof ProgramChipMismatchException) {
+							msg = "Error reading binary image: " + throwable;
+						} else {
+							msg = "Error reading MAC address. Reason: " + throwable;
+						}
+						
+						log.warn("{} => read MAC: {}", nodeUrn, msg);
+						listener.failure((byte) -3, msg.getBytes());
+					}
+
+					@Override
+					public void onProgressChange(final float fraction) {
+						// nothing
+					}
+
+					@Override
+					public void onSuccess(final MacAddress result) {
+						log.debug("Reading MAC was successful.");
+						
+						byte[] macarray = result.toByteArray();
+						
+						String mac = "0x";
+						String macpart;
+						for (int i = 0; i < 8; i++){
+							macpart = Integer.toHexString(macarray[i] & 255);
+							if (macpart.length() == 1){
+								macpart = "0" + macpart;
+							}
+							mac = mac + macpart;
+						}
+						log.debug("MAC address read: " + mac); 
+						
+						if (mac.equals("0xffffffffffffffff")){
+							log.info("Flashing removed MAC on node, writing new MAC address."); 
+							
+							Long macAsLong = StringUtils.parseHexOrDecLongFromUrn(nodeUrn);
+							MacAddress macAddress = new MacAddress(macAsLong);	
+									
+							log.info("New MAC will be: " + macAddress.toHexString());
+
+							device.writeMac(macAddress, timeoutFlash, writeMacListener);
+						} else {
+							listener.progress(1);
+							listener.success(null);
+						}
+					}
+				};
+				
+				final AsyncAdapter<Void> flashListener = new AsyncAdapter<Void>(){
 					private int lastProgress = -1;
 
 					@Override
@@ -463,18 +512,16 @@ public class WSNDeviceAppConnectorImpl extends AbstractListenable<WSNDeviceAppCo
 						} else {
 							msg = "Failed flashing node. Reason: " + throwable;
 						}
-
+						
 						log.warn("{} => flashProgram: {}", nodeUrn, msg);
 						listener.failure((byte) -3, msg.getBytes());
 					}
 
 					@Override
 					public void onProgressChange(final float fraction) {
-
 						int newProgress = (int) (fraction * 100);
 
-						if (newProgress > lastProgress) {
-
+						if ((newProgress > lastProgress) && (newProgress <= 90)) {
 							log.debug("{} => Flashing progress: {}%.", nodeUrn, newProgress);
 							listener.progress(fraction);
 							lastProgress = newProgress;
@@ -483,13 +530,14 @@ public class WSNDeviceAppConnectorImpl extends AbstractListenable<WSNDeviceAppCo
 
 					@Override
 					public void onSuccess(final Void result) {
-
 						log.debug("{} => Done flashing node.", nodeUrn);
-						listener.success(null);
+						
+						device.readMac(timeoutFlash, readMacListener);
 					}
-				}
-				);
-
+					
+				};
+				
+				device.program(program.getProgram().toByteArray(), timeoutFlash, flashListener);
 			}
 
 		} else {
@@ -785,16 +833,21 @@ public class WSNDeviceAppConnectorImpl extends AbstractListenable<WSNDeviceAppCo
 
 	private void tryToDetectNodeSerialInterface() {
 
-
-        final Long macAsLong = StringUtils.parseHexOrDecLongFromUrn(nodeUrn);
+		final DeviceMacReferenceMap deviceMacReferenceMap = new DeviceMacReferenceMap();
+		final Long macAsLong = StringUtils.parseHexOrDecLongFromUrn(nodeUrn);
 		final MacAddress nodeMacAddress = new MacAddress(macAsLong);
 
+		if (nodeUSBChipID != null && !"".equals(nodeUSBChipID)) {
+			deviceMacReferenceMap.put(nodeUSBChipID, nodeMacAddress);
+		}
 
 		log.info("{} => Searching for port of {} device with MAC address {}.",
 				new Object[]{nodeUrn, nodeType, nodeMacAddress}
 		);
 
-
+		DeviceObserver deviceObserver = Guice
+				.createInjector(new DeviceUtilsModule(deviceMacReferenceMap))
+				.getInstance(DeviceObserver.class);
 
 		final ImmutableList<DeviceEvent> events = deviceObserver.getEvents();
 
