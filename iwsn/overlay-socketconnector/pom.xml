@@ -29,7 +29,7 @@
 	<parent>
 		<groupId>de.uniluebeck.itm</groupId>
 		<artifactId>tr.iwsn</artifactId>
-		<version>0.7.3-SNAPSHOT</version>
+		<version>0.8.1</version>
 		<relativePath>../</relativePath>
 	</parent>
 
@@ -51,6 +51,16 @@
 		<dependency>
 			<groupId>de.uniluebeck.itm.itmutils</groupId>
 			<artifactId>itmutils</artifactId>
+		</dependency>
+        		<dependency>
+			<groupId>de.uniluebeck.itm</groupId>
+			<artifactId>wsn-device-drivers-factories</artifactId>
+            <version>0.4-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>de.uniluebeck.itm</groupId>
+			<artifactId>wsn-device-drivers-core</artifactId>
+            <version>0.4-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
